@@ -3,11 +3,13 @@ import { describe, expect, test } from 'vitest'
 import {
   MAHJONG_TILE_IDS,
   MAHJONG_TILE_META,
+  compactMahjongChallenge,
   createMahjongChallenge,
   isMahjongTileId,
   isStandardMahjongWin,
   sortMahjongTiles,
   winningTilesForHand,
+  winningTilesForCompactHand,
   type MahjongTileId,
 } from './mahjong.ts'
 
@@ -250,6 +252,23 @@ describe('mahjong challenge generation', () => {
   test('is reproducible with an injected random source', () => {
     expect(createMahjongChallenge(seeded(42))).toEqual(createMahjongChallenge(seeded(42)))
     expect(createMahjongChallenge(seeded(42))).not.toEqual(createMahjongChallenge(seeded(43)))
+  })
+
+  test('compacts generated challenges to the same seven-tile single-answer contract as v3', () => {
+    for (let seed = 0; seed < 2_000; seed += 1) {
+      const challenge = compactMahjongChallenge(
+        createMahjongChallenge(seeded(seed)),
+        seeded(seed + 1),
+      )
+      const winners = winningTilesForCompactHand(challenge.hand)
+      expect(challenge.hand).toHaveLength(7)
+      expect(challenge.candidates).toHaveLength(12)
+      expect(new Set(challenge.candidates).size).toBe(12)
+      expect(winners).toContain(challenge.winningTile)
+      expect(challenge.candidates.filter((tile) => winners.includes(tile))).toEqual([
+        challenge.winningTile,
+      ])
+    }
   })
 
   test('produces twelve unique choices and every supported wait type across deterministic seeds', () => {

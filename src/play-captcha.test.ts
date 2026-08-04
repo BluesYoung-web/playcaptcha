@@ -3,9 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import {
   PLAY_CAPTCHA_LOCALES,
   PlayCaptcha,
-  isStandardMahjongWin,
   normalizeLocale,
-  sortMahjongTiles,
   type MahjongTileId,
   type PlayCaptchaVerificationTransportInput,
 } from './index.ts'
@@ -133,7 +131,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('renders one local 13-tile ready hand and twelve reachable Mahjong candidates', async () => {
+test('renders the same seven-tile hand shape as remote v3 with twelve reachable candidates', async () => {
   const captcha = await mountedLocal()
   const root = captcha.shadowRoot!
   const hand = [...captcha.mahjongHand]
@@ -141,10 +139,8 @@ test('renders one local 13-tile ready hand and twelve reachable Mahjong candidat
 
   expect(PLAY_CAPTCHA_LOCALES).toEqual(['zh-CN', 'en'])
   expect(normalizeLocale('en-US')).toBe('en')
-  expect(hand).toHaveLength(13)
-  expect(isStandardMahjongWin([...hand, captcha.currentMahjongTarget!])).toBe(true)
-  expect(sortMahjongTiles(hand)).toEqual([...sortMahjongTiles(hand)])
-  expect(root.querySelectorAll('.clawcap-hand-tile')).toHaveLength(13)
+  expect(hand).toHaveLength(7)
+  expect(root.querySelectorAll('.clawcap-hand-tile')).toHaveLength(7)
   expect(candidates).toHaveLength(12)
   expect(new Set(candidates.map((image) => image.dataset.tile)).size).toBe(12)
   expect(root.querySelector('.cc-toy')).toBeNull()
@@ -176,7 +172,7 @@ test('refresh replaces the local hand and clears carried and success state', asy
   })
   captcha.shadowRoot!.querySelector<HTMLButtonElement>('.clawcap-refresh')!.click()
   await captcha.updateComplete
-  expect(captcha.mahjongHand).toHaveLength(13)
+  expect(captcha.mahjongHand).toHaveLength(7)
   expect(captcha.mahjongHand).not.toEqual(first)
   expect((captcha as unknown as { verified: boolean }).verified).toBe(false)
   expect((captcha as unknown as { phase: string }).phase).toBe('idle')

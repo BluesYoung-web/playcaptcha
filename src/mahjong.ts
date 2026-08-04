@@ -399,6 +399,112 @@ export function winningTilesForHand(hand: readonly MahjongTileId[]): MahjongTile
   return MAHJONG_TILE_IDS.filter((tile) => isStandardMahjongWin([...hand, tile]))
 }
 
+interface StandardDecomposition {
+  pair: readonly [MahjongTileId, MahjongTileId]
+  melds: readonly (readonly MahjongTileId[])[]
+}
+
+function meldDecomposition(counts: number[], remaining: number): MahjongTileId[][] | null {
+  if (remaining === 0) return []
+  const first = counts.findIndex((count) => count > 0)
+  if (first < 0) return null
+  const tile = MAHJONG_TILE_IDS[first]!
+
+  if (counts[first]! >= 3) {
+    counts[first]! -= 3
+    const rest = meldDecomposition(counts, remaining - 3)
+    counts[first]! += 3
+    if (rest) return [[tile, tile, tile], ...rest]
+  }
+
+  const meta = MAHJONG_TILE_META[tile]
+  const next = MAHJONG_TILE_IDS[first + 1]
+  const after = MAHJONG_TILE_IDS[first + 2]
+  if (
+    next !== undefined &&
+    after !== undefined &&
+    meta.suit !== 'honors' &&
+    meta.rank !== null &&
+    meta.rank <= 7 &&
+    MAHJONG_TILE_META[next].suit === meta.suit &&
+    MAHJONG_TILE_META[after].suit === meta.suit &&
+    counts[first + 1]! > 0 &&
+    counts[first + 2]! > 0
+  ) {
+    counts[first]!--
+    counts[first + 1]!--
+    counts[first + 2]!--
+    const rest = meldDecomposition(counts, remaining - 3)
+    counts[first]!++
+    counts[first + 1]!++
+    counts[first + 2]!++
+    if (rest) return [[tile, next, after], ...rest]
+  }
+  return null
+}
+
+function standardDecomposition(
+  tiles: readonly MahjongTileId[],
+  meldCount: number,
+): StandardDecomposition | null {
+  if (tiles.length !== meldCount * 3 + 2) return null
+  const counts = tileCounts(tiles)
+  if (!counts) return null
+  for (let pair = 0; pair < counts.length; pair += 1) {
+    if (counts[pair]! < 2) continue
+    counts[pair]! -= 2
+    const melds = meldDecomposition(counts, meldCount * 3)
+    counts[pair]! += 2
+    const pairTile = MAHJONG_TILE_IDS[pair]
+    if (melds && pairTile !== undefined) return { pair: [pairTile, pairTile], melds }
+  }
+  return null
+}
+
+export function winningTilesForCompactHand(hand: readonly MahjongTileId[]): MahjongTileId[] {
+  if (hand.length !== 7 || !tileCounts(hand)) return []
+  return MAHJONG_TILE_IDS.filter((tile) => standardDecomposition([...hand, tile], 2) !== null)
+}
+
+export function compactMahjongChallenge(
+  challenge: MahjongChallenge,
+  random: () => number = Math.random,
+): MahjongChallenge {
+  const decomposition = standardDecomposition([...challenge.hand, challenge.winningTile], 4)
+  if (!decomposition) throw new Error('Mahjong challenge requires a standard winning hand')
+
+  for (let left = 0; left < decomposition.melds.length - 1; left += 1) {
+    for (let right = left + 1; right < decomposition.melds.length; right += 1) {
+      const complete = [
+        ...decomposition.pair,
+        ...decomposition.melds[left]!,
+        ...decomposition.melds[right]!,
+      ]
+      const winningIndex = complete.indexOf(challenge.winningTile)
+      if (winningIndex < 0) continue
+      complete.splice(winningIndex, 1)
+      const hand = sortMahjongTiles(complete)
+      const winningTiles = winningTilesForCompactHand(hand)
+      if (!winningTiles.includes(challenge.winningTile)) continue
+      const counts = tileCounts(hand)!
+      const distractors = shuffle(
+        MAHJONG_TILE_IDS.filter(
+          (tile, index) =>
+            tile !== challenge.winningTile && !winningTiles.includes(tile) && counts[index]! < 4,
+        ),
+        random,
+      ).slice(0, 11)
+      if (distractors.length !== 11) continue
+      return {
+        ...challenge,
+        hand,
+        candidates: shuffle([challenge.winningTile, ...distractors], random),
+      }
+    }
+  }
+  throw new Error('Mahjong challenge could not preserve its winning tile in seven tiles')
+}
+
 export type MahjongWaitType = 'pair' | 'edge' | 'closed'
 
 export interface MahjongChallenge {

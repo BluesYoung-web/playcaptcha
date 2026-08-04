@@ -12,6 +12,7 @@ import {
 } from './i18n.ts'
 import {
   MAHJONG_TILE_META,
+  compactMahjongChallenge,
   createMahjongChallenge,
   sortMahjongTiles,
   type MahjongTileId,
@@ -754,7 +755,7 @@ export class PlayCaptcha extends LitElement {
 
   private resetMahjongChallenge(): void {
     this.remoteMahjong = null
-    this.mahjong = createMahjongChallenge()
+    this.mahjong = compactMahjongChallenge(createMahjongChallenge())
     const winningTile = this.mahjong.winningTile
     if (!winningTile) throw new Error('Local mahjong challenge requires a winning tile')
     this.mahjongTileBySlot = this.mahjong.candidates

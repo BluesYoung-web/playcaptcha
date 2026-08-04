@@ -7,8 +7,10 @@ import sharp from 'sharp'
 import {
   MAHJONG_TILE_IDS,
   MAHJONG_TILE_META,
+  compactMahjongChallenge,
   createMahjongChallenge,
   sortMahjongTiles,
+  winningTilesForCompactHand,
 } from 'playcaptcha'
 
 const options = new Set(process.argv.slice(2))
@@ -55,15 +57,6 @@ function session(request) {
     id,
     header: `playcaptcha_session=${id}; HttpOnly; SameSite=Lax; Path=/; Max-Age=1800`,
   }
-}
-
-function shuffle(values) {
-  const result = [...values]
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const swap = randomInt(index + 1)
-    ;[result[index], result[swap]] = [result[swap], result[index]]
-  }
-  return result
 }
 
 async function body(request) {
@@ -120,87 +113,6 @@ function randomizedTile(tile) {
   return variants[randomInt(variants.length)]
 }
 
-function tileCounts(tiles) {
-  const counts = Array(MAHJONG_TILE_IDS.length).fill(0)
-  for (const tile of tiles) {
-    const index = MAHJONG_TILE_IDS.indexOf(tile)
-    if (index < 0 || ++counts[index] > 4) return null
-  }
-  return counts
-}
-
-function meldDecomposition(counts, remaining) {
-  if (remaining === 0) return []
-  const first = counts.findIndex((count) => count > 0)
-  if (first < 0) return null
-  const tile = MAHJONG_TILE_IDS[first]
-  if (counts[first] >= 3) {
-    counts[first] -= 3
-    const rest = meldDecomposition(counts, remaining - 3)
-    counts[first] += 3
-    if (rest) return [[tile, tile, tile], ...rest]
-  }
-  const meta = MAHJONG_TILE_META[tile]
-  const next = MAHJONG_TILE_IDS[first + 1]
-  const after = MAHJONG_TILE_IDS[first + 2]
-  if (
-    meta.suit !== 'honors' &&
-    meta.rank !== null &&
-    meta.rank <= 7 &&
-    MAHJONG_TILE_META[next]?.suit === meta.suit &&
-    MAHJONG_TILE_META[after]?.suit === meta.suit &&
-    counts[first + 1] > 0 &&
-    counts[first + 2] > 0
-  ) {
-    counts[first]--
-    counts[first + 1]--
-    counts[first + 2]--
-    const rest = meldDecomposition(counts, remaining - 3)
-    counts[first]++
-    counts[first + 1]++
-    counts[first + 2]++
-    if (rest) return [[tile, next, after], ...rest]
-  }
-  return null
-}
-
-function standardDecomposition(tiles, meldCount) {
-  if (tiles.length !== meldCount * 3 + 2) return null
-  const counts = tileCounts(tiles)
-  if (!counts) return null
-  for (let pair = 0; pair < counts.length; pair += 1) {
-    if (counts[pair] < 2) continue
-    counts[pair] -= 2
-    const melds = meldDecomposition(counts, meldCount * 3)
-    counts[pair] += 2
-    if (melds) return { pair: [MAHJONG_TILE_IDS[pair], MAHJONG_TILE_IDS[pair]], melds }
-  }
-  return null
-}
-
-function sevenTileHand(hand, winningTile) {
-  const decomposition = standardDecomposition([...hand, winningTile], 4)
-  if (!decomposition) throw new Error('Mahjong challenge requires a standard winning hand')
-  for (let left = 0; left < decomposition.melds.length - 1; left += 1) {
-    for (let right = left + 1; right < decomposition.melds.length; right += 1) {
-      const complete = [
-        ...decomposition.pair,
-        ...decomposition.melds[left],
-        ...decomposition.melds[right],
-      ]
-      const winningIndex = complete.indexOf(winningTile)
-      if (winningIndex < 0) continue
-      complete.splice(winningIndex, 1)
-      return sortMahjongTiles(complete)
-    }
-  }
-  throw new Error('Mahjong challenge could not preserve its winning tile in seven tiles')
-}
-
-function compactWinningTiles(hand) {
-  return MAHJONG_TILE_IDS.filter((tile) => standardDecomposition([...hand, tile], 2))
-}
-
 async function composeHand(hand) {
   const tiles = sortMahjongTiles(hand).map((tile) => randomizedTile(tile))
   const gap = randomInt(4, 8)
@@ -254,29 +166,19 @@ function expire(now) {
 }
 
 async function createChallenge(sessionId) {
-  const generated = createMahjongChallenge()
-  const visibleHand = sevenTileHand(generated.hand, generated.winningTile)
-  const visibleWinners = compactWinningTiles(visibleHand)
+  const generated = compactMahjongChallenge(createMahjongChallenge())
+  const visibleHand = generated.hand
+  const visibleWinners = winningTilesForCompactHand(visibleHand)
   if (!visibleWinners.includes(generated.winningTile)) {
     throw new Error('Seven-tile hand must preserve the server answer')
   }
-  const visibleCounts = tileCounts(visibleHand)
-  const distractors = shuffle(
-    MAHJONG_TILE_IDS.filter(
-      (tile, index) =>
-        tile !== generated.winningTile &&
-        !visibleWinners.includes(tile) &&
-        visibleCounts[index] < 4,
-    ),
-  ).slice(0, 11)
-  if (distractors.length !== 11) throw new Error('Mahjong challenge needs eleven non-winning tiles')
-  const challengeId = randomUUID()
-  const expiresAt = Date.now() + challengeTtl
-  const candidates = shuffle([generated.winningTile, ...distractors]).map((tile) => ({
+  const candidates = generated.candidates.map((tile) => ({
     id: randomUUID(),
     tile,
     image: '',
   }))
+  const challengeId = randomUUID()
+  const expiresAt = Date.now() + challengeTtl
   for (const candidate of candidates) {
     candidate.image = registerAsset(
       challengeId,
@@ -308,14 +210,7 @@ async function createChallenge(sessionId) {
   return response
 }
 
-export {
-  compactWinningTiles,
-  createChallenge,
-  randomizedTile,
-  sevenTileHand,
-  variantPool,
-  warmVariantPool,
-}
+export { createChallenge, randomizedTile, variantPool, warmVariantPool }
 
 async function api(request, response) {
   const activeSession = session(request)
