@@ -1,0 +1,23 @@
+{
+  "name": "@playcaptcha/playground-react",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev --host 0.0.0.0 --port 4184 --strictPort",
+    "check": "vp check",
+    "build": "vp build"
+  },
+  "dependencies": {
+    "playcaptcha": "workspace:*",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "typescript": "^5.9.3",
+    "vite-plus": "^0.2.6"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@playcaptcha/playground-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs --dev --host 0.0.0.0 --port 4186",
+    "serve": "node server.mjs --host 0.0.0.0 --port 4186",
+    "check": "vp check",
+    "build": "vp build"
+  },
+  "dependencies": {
+    "playcaptcha": "workspace:*",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@voidzero-dev/vite-plus-core": "^0.2.6",
+    "typescript": "^5.9.3",
+    "vite-plus": "^0.2.6"
+  }
+}

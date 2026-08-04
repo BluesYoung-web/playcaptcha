@@ -1,0 +1,144 @@
+:root {
+  color: #25231f;
+  background: #f5f1e8;
+  font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+select {
+  min-height: 44px;
+  border: 1px solid #b8ad9b;
+  border-radius: 10px;
+  background: #fffdf8;
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  padding: 0 1rem;
+  cursor: pointer;
+}
+
+select {
+  width: 100%;
+  padding: 0 2.5rem 0 0.75rem;
+}
+
+button:hover,
+select:hover {
+  border-color: #756957;
+}
+
+button:focus-visible,
+select:focus-visible {
+  outline: 3px solid #5c7c68;
+  outline-offset: 2px;
+}
+
+.demo-page {
+  width: min(100% - 2rem, 48rem);
+  margin: 0 auto;
+  padding: 3rem 0;
+}
+
+.demo-header {
+  margin-bottom: 2rem;
+}
+
+.demo-kicker {
+  margin: 0 0 0.5rem;
+  color: #685f52;
+  font:
+    700 0.75rem/1.2 'SFMono-Regular',
+    Consolas,
+    monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.demo-title {
+  margin: 0;
+  font:
+    700 clamp(2rem, 8vw, 4rem)/0.95 Georgia,
+    'Times New Roman',
+    serif;
+  letter-spacing: -0.04em;
+}
+
+.demo-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.demo-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.demo-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.demo-stage {
+  overflow-x: auto;
+  padding: 1.5rem;
+  border: 1px solid #d1c7b7;
+  border-radius: 18px;
+  background: #fffdf8;
+  box-shadow: 0 18px 50px rgb(76 63 43 / 10%);
+}
+
+#captcha-shell {
+  width: 440px;
+  max-width: 100%;
+  margin: 0 auto;
+  transition: width 180ms ease;
+}
+
+#captcha-shell.is-compact {
+  width: 190px;
+}
+
+#result {
+  min-height: 1.5em;
+  margin: 1rem 0 0;
+  color: #3f5d49;
+  font-weight: 700;
+  text-align: center;
+}
+
+play-captcha {
+  display: block;
+  width: 100%;
+}
+
+@media (max-width: 32rem) {
+  .demo-page {
+    padding-top: 2rem;
+  }
+
+  .demo-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #captcha-shell {
+    transition: none;
+  }
+}

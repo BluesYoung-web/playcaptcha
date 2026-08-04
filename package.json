@@ -1,41 +1,51 @@
 {
   "name": "playcaptcha",
   "version": "0.1.0",
-  "description": "claw machine captcha for react - grab the right toy to prove you're human",
-  "type": "module",
+  "description": "Mahjong winning-tile captcha web component with local and server-issued verification",
   "license": "MIT",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./clawcaptcha.css": "./dist/clawcaptcha.css"
-  },
-  "sideEffects": [
-    "**/*.css"
-  ],
   "files": [
     "dist",
     "assets"
   ],
-  "scripts": {
-    "build": "tsup",
-    "prepublishOnly": "npm run build"
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./assets/*": "./assets/*"
   },
-  "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
+  "scripts": {
+    "dev": "vp dev",
+    "check": "vp check",
+    "test": "vp test --run && node --test scripts/verify-umd-build.test.mjs && pnpm run test:workspace-contract",
+    "test:workspace-contract": "node --test scripts/verify-workspace.test.mjs",
+    "test:playgrounds-contract": "node --test scripts/verify-playgrounds.test.mjs",
+    "test:playgrounds": "pnpm run playgrounds:check && node scripts/verify-playgrounds.mjs",
+    "test:umd": "node --test scripts/verify-umd-build.test.mjs && node scripts/verify-umd-build.mjs",
+    "test:consumer": "node scripts/verify-package-consumer.mjs",
+    "test:consumer-contract": "node --test scripts/verify-package-consumer.test.mjs",
+    "build:consumer": "node scripts/verify-package-consumer.mjs",
+    "playground:vanilla": "pnpm build && vp run @playcaptcha/playground-vanilla#dev",
+    "playground:react": "pnpm build && vp run @playcaptcha/playground-react#dev",
+    "playground:vue": "pnpm build && vp run @playcaptcha/playground-vue#dev",
+    "playground:server": "pnpm build && vp run @playcaptcha/playground-server#dev",
+    "playgrounds:check": "pnpm build && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match check",
+    "playgrounds:build": "pnpm build && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match build",
+    "build": "vp pack && pnpm run test:umd",
+    "prepublishOnly": "pnpm check && pnpm test && pnpm build && pnpm test:consumer-contract && node scripts/verify-package-consumer.mjs --skip-build && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match check && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match build && pnpm test:playgrounds-contract && node scripts/verify-playgrounds.mjs --skip-build"
   },
   "dependencies": {
-    "motion": "^12.0.0"
+    "lit": "^3.3.3"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "tsup": "^8.3.0",
-    "typescript": "^5.7.0"
-  }
+    "@voidzero-dev/vite-plus-core": "^0.2.6",
+    "happy-dom": "^20.11.1",
+    "typescript": "^5.9.3",
+    "vite-plus": "^0.2.6"
+  },
+  "packageManager": "pnpm@10.33.0"
 }

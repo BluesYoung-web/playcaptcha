@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="PlayCaptcha Mahjong demo" />
+    <title>PlayCaptcha Mahjong Demo</title>
+    <style>
+      :root {
+        background: #101012;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+        background: #101012;
+      }
+
+      main {
+        text-align: center;
+      }
+
+      .demo-captcha {
+        vertical-align: top;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <play-captcha class="demo-captcha" asset-base="/assets/majiang_ui/"></play-captcha>
+      <p id="result" class="sr-only" role="status" aria-live="polite"></p>
+    </main>
+    <script type="module" src="/demo.ts"></script>
+  </body>
+</html>
