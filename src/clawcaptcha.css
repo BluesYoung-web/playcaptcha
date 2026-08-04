@@ -416,20 +416,13 @@ button.clawcap-help:focus-visible {
 
 .clawcap-mahjong-hand {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-end;
+  align-items: center;
   gap: 2px;
-  width: 330px;
-  max-width: 100%;
-  margin: 0 auto 16px;
-}
-
-.clawcap-mahjong-hand--remote {
-  width: min(100%, 352px);
-  min-height: 58px;
-  margin-bottom: 18px;
-  padding: 5px 8px 6px;
+  width: min(100%, 330px);
+  height: 60px;
+  margin: 0 auto 18px;
+  padding: 6px 8px;
   border: 1px solid rgba(60, 60, 67, 0.06);
   border-radius: 11px;
   background: linear-gradient(180deg, rgba(248, 248, 250, 0.72), rgba(242, 243, 246, 0.42));
@@ -439,23 +432,22 @@ button.clawcap-help:focus-visible {
 }
 
 .clawcap-hand-tile {
-  width: 21px;
-  height: 25px;
-  filter: drop-shadow(0 1.5px 1.5px rgba(30, 30, 40, 0.18));
+  display: block;
+  width: 42px;
+  height: 47px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(30, 30, 40, 0.13));
 }
 
 .clawcap-hand-image {
   display: block;
-  width: 100%;
+  width: 306px;
+  max-width: 100%;
   height: 47px;
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
   filter: drop-shadow(0 2px 2px rgba(30, 30, 40, 0.13));
-}
-
-.clawcap-hand-tile.is-suit-start {
-  margin-left: 6px;
 }
 
 /* steps — a true segmented control: equal segments, ONE pill that slides */
@@ -584,32 +576,6 @@ button.clawcap-help:focus-visible {
   transform: scale(var(--cc-scale));
   transform-origin: top left;
   z-index: 40;
-}
-
-.cc-countdown {
-  position: absolute;
-  top: 13px;
-  right: 13px;
-  z-index: 35;
-  min-width: 43px;
-  padding: 4px 7px;
-  border: 1px solid rgba(60, 60, 67, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
-  color: #48484a;
-  box-shadow: 0 2px 8px rgba(30, 30, 40, 0.08);
-  font-size: 0.75rem;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-  text-align: center;
-  backdrop-filter: blur(6px);
-}
-
-.cc-countdown.is-low {
-  border-color: rgba(196, 52, 52, 0.2);
-  background: rgba(255, 242, 240, 0.9);
-  color: #a52020;
 }
 
 /* the show is over: the machine softly steps back */

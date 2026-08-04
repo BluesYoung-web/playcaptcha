@@ -114,30 +114,29 @@ function randomizedTile(tile) {
 }
 
 async function composeHand(hand) {
-  const tiles = sortMahjongTiles(hand).map((tile) => randomizedTile(tile))
-  const gap = randomInt(4, 8)
-  const margin = randomInt(6, 12)
-  const height = Math.max(...tiles.map(({ height }) => height)) + margin * 2
-  const width =
-    tiles.reduce((sum, image) => sum + image.width, 0) + gap * (tiles.length - 1) + margin * 2
-  let x = margin
-  const composites = tiles.map((image) => {
-    const top = margin + randomInt(-2, 3) + Math.floor((height - margin * 2 - image.height) / 2)
-    const input = image.pixels
-    const overlay = {
-      input,
-      raw: { width: image.width, height: image.height, channels: 4 },
-      left: x,
-      top,
-    }
-    x += image.width + gap
-    return overlay
-  })
+  const width = 42
+  const height = 47
+  const tiles = await Promise.all(
+    sortMahjongTiles(hand).map((tile) =>
+      sharp(randomizedTile(tile).bytes)
+        .resize(width, height, {
+          fit: 'contain',
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
+        .png()
+        .toBuffer(),
+    ),
+  )
   return sharp({
-    create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    create: {
+      width: width * tiles.length,
+      height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
   })
-    .composite(composites)
-    .webp({ quality: 92, alphaQuality: 100, effort: 0, smartSubsample: true })
+    .composite(tiles.map((input, index) => ({ input, left: index * width, top: 0 })))
+    .webp({ lossless: true, effort: 2 })
     .toBuffer()
 }
 

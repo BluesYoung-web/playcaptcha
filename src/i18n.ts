@@ -27,7 +27,6 @@ interface PlayCaptchaMessages {
   judgePrompt: string
   wrongTileHidden: (caught: string) => string
   verificationLabel: string
-  timeRemaining: (seconds: number) => string
   verification: {
     loading: string
     pending: string
@@ -145,7 +144,6 @@ export const PLAY_CAPTCHA_MESSAGES: Record<PlayCaptchaLocale, PlayCaptchaMessage
     judgePrompt: '请观察手牌，判断胡哪张牌',
     wrongTileHidden: (caught) => `夹到的是${caught}，这张不能胡。`,
     verificationLabel: '麻将胡牌真人验证',
-    timeRemaining: (seconds) => `本题剩余 ${seconds} 秒`,
     verification: {
       loading: '正在从服务器加载挑战…',
       pending: '正在向服务器验证…',
@@ -187,7 +185,6 @@ export const PLAY_CAPTCHA_MESSAGES: Record<PlayCaptchaLocale, PlayCaptchaMessage
     judgePrompt: 'Study the hand and choose the winning tile',
     wrongTileHidden: (caught) => `${caught} does not complete this hand.`,
     verificationLabel: 'Mahjong winning-tile verification',
-    timeRemaining: (seconds) => `${seconds} seconds remaining`,
     verification: {
       loading: 'Loading challenge from the server…',
       pending: 'Checking with the server…',

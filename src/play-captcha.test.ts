@@ -433,7 +433,7 @@ test('expired issued challenge refreshes automatically', async () => {
   })
   document.body.append(captcha)
   await vi.waitFor(() => expect(creates).toHaveLength(2), { timeout: 1_500 })
-  expect(captcha.shadowRoot!.querySelector('.cc-countdown')).not.toBeNull()
+  expect(captcha.shadowRoot!.querySelector('.cc-countdown')).toBeNull()
 })
 
 test('invalid remote configuration emits config error without fetch', async () => {

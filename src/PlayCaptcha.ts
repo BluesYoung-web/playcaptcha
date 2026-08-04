@@ -730,10 +730,8 @@ export class PlayCaptcha extends LitElement {
       else if (changed.get('infoOpen') === true)
         this.renderRoot.querySelector<HTMLButtonElement>('.clawcap-help')?.focus()
     }
-    if (changed.has('phase')) {
-      if (this.runtimeActive) this.observeGlass()
-      this.renderFrame()
-    }
+    if (this.runtimeActive) this.observeGlass()
+    this.renderFrame()
   }
 
   protected handleSuccessfulVerification(detail: PlayCaptchaVerifyEventDetail): void {
@@ -1750,21 +1748,7 @@ export class PlayCaptcha extends LitElement {
   }
 
   private renderGlass() {
-    const messages = PLAY_CAPTCHA_MESSAGES[this.locale]
-    const countdown = this.challengeSecondsRemaining
-    const countdownText =
-      countdown === null
-        ? null
-        : `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}`
     return html`<div class=${`clawcap-glass${this.verified ? ' clawcap-glass--dim' : ''}`}>
-      ${countdownText === null
-        ? nothing
-        : html`<span
-            class=${`cc-countdown${countdown !== null && countdown <= 10 ? ' is-low' : ''}`}
-            role="timer"
-            aria-label=${messages.timeRemaining(countdown ?? 0)}
-            >${countdownText}</span
-          >`}
       <div class="cc-scene">
         <div class="cc-rail"></div>
         <div class="cc-trolley" aria-hidden="true"></div>
@@ -2075,20 +2059,13 @@ export class PlayCaptcha extends LitElement {
         >
       </p>
       ${this.remoteMahjong
-        ? html`<div
-            class="clawcap-mahjong-hand clawcap-mahjong-hand--remote"
-            role="img"
-            aria-label=${messages.handLabel}
-          >
+        ? html`<div class="clawcap-mahjong-hand" role="img" aria-label=${messages.handLabel}>
             <img class="clawcap-hand-image" src=${this.remoteMahjong.handImage} alt="" />
           </div>`
         : this.mahjong
           ? html`<div class="clawcap-mahjong-hand" role="group" aria-label=${messages.handLabel}>
-              ${sortMahjongTiles(this.mahjong.hand).map((tile, index, sorted) =>
-                this.renderMahjongTile(
-                  tile,
-                  `clawcap-hand-tile${index > 0 && MAHJONG_TILE_META[sorted[index - 1]!].suit !== MAHJONG_TILE_META[tile].suit ? ' is-suit-start' : ''}`,
-                ),
+              ${sortMahjongTiles(this.mahjong.hand).map((tile) =>
+                this.renderMahjongTile(tile, 'clawcap-hand-tile'),
               )}
             </div>`
           : nothing}
