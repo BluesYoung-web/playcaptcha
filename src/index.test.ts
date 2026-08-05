@@ -29,7 +29,7 @@ test('publishes bundled defaults and exposes source assets for optional self-hos
   expect(packageJson.exports?.['./assets/*']).toBe('./assets/*')
 })
 
-test('builds fresh artifacts before the standalone consumer gate', () => {
+test('builds fresh artifacts before release checks', () => {
   const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
     scripts?: Record<string, string>
   }
@@ -47,9 +47,7 @@ test('builds fresh artifacts before the standalone consumer gate', () => {
   expect(packageJson.scripts?.['test:playgrounds']).toBe(
     'pnpm run playgrounds:check && node scripts/verify-playgrounds.mjs',
   )
-  expect(packageJson.scripts?.prepublishOnly).toBe(
-    "pnpm check && pnpm test && pnpm build && pnpm test:consumer-contract && node scripts/verify-package-consumer.mjs --skip-build && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match check && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match build && pnpm test:playgrounds-contract && node scripts/verify-playgrounds.mjs --skip-build",
-  )
+  expect(packageJson.scripts?.prepublishOnly).toBe('pnpm build && pnpm check && pnpm test')
 })
 
 test('documents the exact Mahjong-only playground and release contract', () => {

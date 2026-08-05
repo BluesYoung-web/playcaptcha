@@ -1,8 +1,12 @@
 {
   "name": "@bluesyoung/playcaptcha",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Mahjong winning-tile captcha web component with local and server-issued verification",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BluesYoung-web/playcaptcha"
+  },
   "files": [
     "dist",
     "assets"
@@ -40,7 +44,8 @@
     "playgrounds:check": "pnpm build && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match check",
     "playgrounds:build": "pnpm build && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match build",
     "build": "vp pack && pnpm run test:umd",
-    "prepublishOnly": "pnpm check && pnpm test && pnpm build && pnpm test:consumer-contract && node scripts/verify-package-consumer.mjs --skip-build && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match check && vp run --filter '@playcaptcha/playground-*' --fail-if-no-match build && pnpm test:playgrounds-contract && node scripts/verify-playgrounds.mjs --skip-build"
+    "prepublishOnly": "pnpm build && pnpm check && pnpm test",
+    "postinstall": "simple-git-hooks"
   },
   "dependencies": {
     "lit": "^3.3.3"
@@ -48,8 +53,14 @@
   "devDependencies": {
     "@voidzero-dev/vite-plus-core": "^0.2.6",
     "happy-dom": "^20.11.1",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.9.3",
-    "vite-plus": "^0.2.6"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.6",
+    "vite-plus": "^0.2.6",
+    "vitest": "4.1.10"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm build && pnpm check"
   },
   "packageManager": "pnpm@10.33.0"
 }

@@ -51,6 +51,10 @@ void test('keeps the publishable scoped package at the workspace root', () => {
   assert.equal(packageJson.name, '@bluesyoung/playcaptcha')
   assert.notEqual(packageJson.private, true)
   assert.equal(packageJson.packageManager, 'pnpm@10.33.0')
+  assert.deepEqual(packageJson.repository, {
+    type: 'git',
+    url: 'https://github.com/BluesYoung-web/playcaptcha',
+  })
 })
 
 void test('publishes the root package only from matching version tags', () => {
