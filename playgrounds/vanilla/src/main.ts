@@ -39,8 +39,18 @@ const captcha = document.createElement('play-captcha') as PlayCaptcha
 captchaShell.append(captcha)
 const result = document.createElement('p')
 result.id = 'result'
+result.className = 'demo-result'
+result.dataset.state = 'pending'
+result.setAttribute('role', 'status')
 result.setAttribute('aria-live', 'polite')
-result.textContent = 'Waiting'
+result.setAttribute('aria-atomic', 'true')
+const resultLabel = document.createElement('span')
+resultLabel.className = 'demo-result-label'
+resultLabel.textContent = 'Consumer event'
+const resultMessage = document.createElement('span')
+resultMessage.className = 'demo-result-message'
+resultMessage.textContent = 'Waiting for the local verify event.'
+result.append(resultLabel, resultMessage)
 stage.append(captchaShell, result)
 page.append(header, controls, stage)
 app.append(page)
@@ -51,7 +61,15 @@ widthToggle.addEventListener('click', () => {
   widthToggle.textContent = compact ? 'Use 440px width' : 'Use 190px width'
 })
 
+captcha.addEventListener('click', (event) => {
+  if ((event.composedPath()[0] as Element | undefined)?.classList?.contains('clawcap-refresh')) {
+    result.dataset.state = 'pending'
+    resultMessage.textContent = 'Waiting for the local verify event.'
+  }
+})
+
 captcha.addEventListener('verify', (event) => {
   const detail = (event as CustomEvent<PlayCaptchaVerifyEventDetail>).detail
-  result.textContent = `Verified: ${detail.source}`
+  result.dataset.state = 'success'
+  resultMessage.textContent = `verify · source=${detail.source}`
 })

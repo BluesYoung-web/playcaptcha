@@ -27,6 +27,7 @@ interface PlayCaptchaMessages {
   judgePrompt: string
   wrongTileHidden: (caught: string) => string
   verificationLabel: string
+  timeRemaining: (seconds: number) => string
   verification: {
     loading: string
     pending: string
@@ -43,6 +44,8 @@ interface PlayCaptchaMessages {
   hint: string
   aria: { about: string; refresh: string; close: string }
   help: {
+    ruleTitle: string
+    ruleDescription: string
     tagline: string
     moveTitle: string
     moveDescription: string
@@ -144,6 +147,7 @@ export const PLAY_CAPTCHA_MESSAGES: Record<PlayCaptchaLocale, PlayCaptchaMessage
     judgePrompt: '请观察手牌，判断胡哪张牌',
     wrongTileHidden: (caught) => `夹到的是${caught}，这张不能胡。`,
     verificationLabel: '麻将胡牌真人验证',
+    timeRemaining: (seconds) => `本题剩余 ${seconds} 秒`,
     verification: {
       loading: '正在从服务器加载挑战…',
       pending: '正在向服务器验证…',
@@ -160,6 +164,9 @@ export const PLAY_CAPTCHA_MESSAGES: Record<PlayCaptchaLocale, PlayCaptchaMessage
     hint: '使用摇杆或 ← → 移动 · 按空格键抓取和投放',
     aria: { about: '关于 PlayCaptcha', refresh: '重新生成挑战', close: '关闭' },
     help: {
+      ruleTitle: '怎样算胡牌',
+      ruleDescription:
+        '加入一张牌后，全部牌能组成顺子、刻子和一对相同牌，即为胡牌。顺子是同花色连续三张，刻子是三张相同牌。',
       tagline: '判断这手牌胡哪张，再夹起正确麻将。',
       moveTitle: '移动',
       moveDescription: '先观察精简显示的待胡手牌，再用摇杆或 ← → 键对准能胡的麻将。',
@@ -185,6 +192,7 @@ export const PLAY_CAPTCHA_MESSAGES: Record<PlayCaptchaLocale, PlayCaptchaMessage
     judgePrompt: 'Study the hand and choose the winning tile',
     wrongTileHidden: (caught) => `${caught} does not complete this hand.`,
     verificationLabel: 'Mahjong winning-tile verification',
+    timeRemaining: (seconds) => `${seconds} seconds remaining`,
     verification: {
       loading: 'Loading challenge from the server…',
       pending: 'Checking with the server…',
@@ -201,6 +209,9 @@ export const PLAY_CAPTCHA_MESSAGES: Record<PlayCaptchaLocale, PlayCaptchaMessage
     hint: 'Joystick or ← → to move · Space to grab & drop',
     aria: { about: 'About PlayCaptcha', refresh: 'Generate a new challenge', close: 'Close' },
     help: {
+      ruleTitle: 'What makes a winning hand?',
+      ruleDescription:
+        'The added tile must leave only sequences, triplets, and one pair. A sequence is three consecutive tiles in one suit; a triplet is three identical tiles.',
       tagline: 'Read the ready hand, then catch the tile that completes it.',
       moveTitle: 'Move',
       moveDescription: 'Study the compact ready hand, then line the claw up over a winning tile.',

@@ -3,7 +3,7 @@ import { keyed } from 'lit/directives/keyed.js'
 
 import { CLAW_ARM_L, CLAW_ARM_R, CLAW_BODY, CLAW_PIVOT } from './clawArt.ts'
 import clawCaptchaCss from './clawcaptcha.css?inline'
-import { DEFAULT_LOGO_URL, DEFAULT_MAHJONG_URLS } from './defaultAssets.ts'
+import { DEFAULT_MAHJONG_URLS } from './defaultAssets.ts'
 import {
   DEFAULT_PLAY_CAPTCHA_LOCALE,
   PLAY_CAPTCHA_MESSAGES,
@@ -15,6 +15,7 @@ import {
   compactMahjongChallenge,
   createMahjongChallenge,
   sortMahjongTiles,
+  type MahjongChallenge,
   type MahjongTileId,
 } from './mahjong.ts'
 import {
@@ -63,6 +64,8 @@ const DROP_Y = 198
 const ANTIC_RISE = 8
 const DROP_G = 1150
 const ENTRANCE_G = 1500
+const WRONG_FEEDBACK_MS = 900
+const LOCAL_CHALLENGE_TTL_MS = 5 * 60_000
 // happy-dom has no layout; browser runtime replaces this from real rects before tray decisions.
 const ZERO_LAYOUT_TRAY: LogicalTray = {
   cx: 232,
@@ -279,7 +282,6 @@ export class PlayCaptcha extends LitElement {
     overTray: { state: true },
     trayMode: { state: true },
     carriedMahjongTile: { state: true },
-    challengeSecondsRemaining: { state: true },
   }
   static styles = unsafeCSS(clawCaptchaCss)
 
@@ -338,6 +340,7 @@ export class PlayCaptcha extends LitElement {
   private challengeDeadline = 0
   private challengeTimer: number | null = null
 
+  private challengeRefreshTimer: number | null = null
   constructor() {
     super()
     this.showAnswer = false
@@ -475,8 +478,9 @@ export class PlayCaptcha extends LitElement {
     this.verificationController = null
     this.verifying = false
     this.loadingChallenge = false
+    clearTimeout(this.challengeRefreshTimer ?? undefined)
+    this.challengeRefreshTimer = null
   }
-
   private dispatchVerificationError(detail: PlayCaptchaVerificationErrorDetail): void {
     this.dispatchEvent(
       new CustomEvent<PlayCaptchaVerificationErrorDetail>('verification-error', {
@@ -510,7 +514,12 @@ export class PlayCaptcha extends LitElement {
     this.setPhase('idle')
     this.dispatchVerificationError(detail)
     if (detail.kind !== 'config' && this.remoteEnabled && this.isConnected) {
-      void this.loadIssuedChallenge()
+      if (detail.kind === 'rejected') {
+        this.challengeRefreshTimer = window.setTimeout(() => {
+          this.challengeRefreshTimer = null
+          if (this.isConnected && this.remoteEnabled) void this.loadIssuedChallenge()
+        }, WRONG_FEEDBACK_MS)
+      } else void this.loadIssuedChallenge()
     }
   }
 
@@ -523,11 +532,13 @@ export class PlayCaptcha extends LitElement {
     this.requestUpdate()
     this.dispatchVerificationError(detail)
   }
+
   private clearChallengeClock(): void {
     clearInterval(this.challengeTimer ?? undefined)
     this.challengeTimer = null
     this.challengeDeadline = 0
     this.challengeSecondsRemaining = null
+    this.updateCountdownElement()
   }
 
   private startChallengeClock(expiresAt: string | undefined): void {
@@ -547,16 +558,28 @@ export class PlayCaptcha extends LitElement {
     const remaining = Math.max(0, Math.ceil((this.challengeDeadline - Date.now()) / 1000))
     if (remaining !== this.challengeSecondsRemaining) {
       this.challengeSecondsRemaining = remaining
-      this.requestUpdate()
+      this.updateCountdownElement()
     }
     if (remaining > 0) return
     clearInterval(this.challengeTimer ?? undefined)
     this.challengeTimer = null
     this.challengeDeadline = 0
-    if (!this.verifying && !this.loadingChallenge && this.issuedChallenge && this.isConnected) {
+    if (this.verifying || this.loadingChallenge || !this.isConnected) return
+    if (this.remoteEnabled && this.issuedChallenge) {
       this.issuedChallenge = null
       void this.loadIssuedChallenge()
+    } else if (!this.remoteEnabled) {
+      this.resetMahjongChallenge()
     }
+  }
+
+  private updateCountdownElement(): void {
+    const countdown = this.challengeSecondsRemaining
+    const element = this.renderRoot?.querySelector<HTMLElement>('.cc-countdown')
+    if (!element || countdown === null) return
+    element.dataset.countdown = `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}`
+    element.classList.toggle('is-low', countdown <= 10)
+    element.setAttribute('aria-label', PLAY_CAPTCHA_MESSAGES[this.locale].timeRemaining(countdown))
   }
 
   private requestConfiguration(): { endpoint: string | null; context: unknown } | null {
@@ -724,14 +747,12 @@ export class PlayCaptcha extends LitElement {
   }
 
   protected updated(changed: PropertyValues): void {
-    if (changed.has('infoOpen')) {
-      if (this.infoOpen)
-        this.renderRoot.querySelector<HTMLButtonElement>('.clawcap-info-x')?.focus()
-      else if (changed.get('infoOpen') === true)
-        this.renderRoot.querySelector<HTMLButtonElement>('.clawcap-help')?.focus()
+    if (changed.has('infoOpen') && this.infoOpen) {
+      this.renderRoot.querySelector<HTMLButtonElement>('.clawcap-info-x')?.focus()
     }
     if (this.runtimeActive) this.observeGlass()
     this.renderFrame()
+    this.updateCountdownElement()
   }
 
   protected handleSuccessfulVerification(detail: PlayCaptchaVerifyEventDetail): void {
@@ -752,18 +773,30 @@ export class PlayCaptcha extends LitElement {
   }
 
   private resetMahjongChallenge(): void {
+    const previousHand = this.mahjong?.hand
+    let next: MahjongChallenge
+    do {
+      next = compactMahjongChallenge(createMahjongChallenge())
+    } while (
+      previousHand &&
+      next.hand.length === previousHand.length &&
+      next.hand.every((tile, index) => tile === previousHand[index])
+    )
     this.remoteMahjong = null
-    this.mahjong = compactMahjongChallenge(createMahjongChallenge())
-    const winningTile = this.mahjong.winningTile
+    this.mahjong = next
+    const winningTile = next.winningTile
     if (!winningTile) throw new Error('Local mahjong challenge requires a winning tile')
-    this.mahjongTileBySlot = this.mahjong.candidates
-    const targetIdentity = this.mahjong.candidates.indexOf(winningTile)
-    this.pile = scatterMahjongPile(targetIdentity, this.mahjong.candidates.length).map((slot) => ({
+    this.mahjongTileBySlot = next.candidates
+    const targetIdentity = next.candidates.indexOf(winningTile)
+    this.pile = scatterMahjongPile(targetIdentity, next.candidates.length).map((slot) => ({
       ...slot,
       w: Math.min(slot.w, 70),
       rot: Math.max(-5, Math.min(5, slot.rot)),
     }))
     this.resetRuntimeState()
+    if (this.isConnected) {
+      this.startChallengeClock(new Date(Date.now() + LOCAL_CHALLENGE_TTL_MS).toISOString())
+    }
   }
 
   private resetRuntimeState(cancelRequest = true): void {
@@ -802,6 +835,7 @@ export class PlayCaptcha extends LitElement {
   private refreshChallenge = (): void => {
     if (this.remoteEnabled) void this.loadIssuedChallenge()
     else this.resetMahjongChallenge()
+    this.focusGameplay()
   }
 
   private startRuntime(): void {
@@ -821,6 +855,10 @@ export class PlayCaptcha extends LitElement {
     if (this.reduce) this.setReducedPile()
     this.renderFrame()
     this.ensureFrame()
+    if (this.issuedChallenge) this.startChallengeClock(this.issuedChallenge.expiresAt)
+    else if (!this.remoteEnabled) {
+      this.startChallengeClock(new Date(Date.now() + LOCAL_CHALLENGE_TTL_MS).toISOString())
+    }
   }
 
   private setCompact(width: number): void {
@@ -1193,8 +1231,8 @@ export class PlayCaptcha extends LitElement {
       s.close = 1 - easeOutCubic(this.stageProgress(T.open, dt))
       if (s.st > 0.12 && !s.released) {
         s.released = true
+        this.trayMode = 'open'
         if (right) {
-          this.trayMode = submitted ? 'checking' : 'open'
           if (this.reduce) {
             this.finishCorrectDrop()
             return
@@ -1295,6 +1333,10 @@ export class PlayCaptcha extends LitElement {
       this.ripple(this.pile[index]!.x, 0.25, index)
       s.carried = -1
       this.setPhase('idle')
+      this.challengeRefreshTimer = window.setTimeout(() => {
+        this.challengeRefreshTimer = null
+        if (this.isConnected && !this.remoteEnabled) this.resetMahjongChallenge()
+      }, WRONG_FEEDBACK_MS)
     }
   }
 
@@ -1505,12 +1547,6 @@ export class PlayCaptcha extends LitElement {
       ? DEFAULT_MAHJONG_URLS[tile]
       : new URL(`${MAHJONG_TILE_META[tile].assetValue}.webp`, directory).href
   }
-  private logoUrl(): string {
-    const directory = assetDirectory(this.assetBase)
-    return directory.href === DEFAULT_MAHJONG_BASE
-      ? DEFAULT_LOGO_URL
-      : new URL('../playcaptcha.svg', directory).href
-  }
   private openInfo = (): void => {
     this.clearDirection()
     this.finishDrag()
@@ -1520,9 +1556,13 @@ export class PlayCaptcha extends LitElement {
   private closeInfo = (): void => {
     PlayCaptcha.removeOpenInfo(this)
     this.infoOpen = false
+    void this.updateComplete.then(() => this.focusGameplay())
   }
   private stopInfoClick = (event: Event): void => {
     event.stopPropagation()
+  }
+  private focusGameplay(): void {
+    this.renderRoot?.querySelector<HTMLElement>('.clawcap')?.focus({ preventScroll: true })
   }
 
   private beginLegacyDrag(capture: HTMLElement, clientX: number, id: number): void {
@@ -1698,10 +1738,8 @@ export class PlayCaptcha extends LitElement {
           </svg>
         </button>
         <div class="clawcap-info-head">
-          <span class="clawcap-info-tile"
-            ><img src=${this.logoUrl()} alt="" aria-hidden="true"
-          /></span>
-          <h4 class="clawcap-info-title">PlayCaptcha <span class="clawcap-info-ver">v1</span></h4>
+          <h4 class="clawcap-info-rule-title">${messages.help.ruleTitle}</h4>
+          <p class="clawcap-info-rule">${messages.help.ruleDescription}</p>
           <p class="clawcap-info-tag">${messages.help.tagline}</p>
         </div>
         <ol class="clawcap-info-list">
@@ -1748,7 +1786,21 @@ export class PlayCaptcha extends LitElement {
   }
 
   private renderGlass() {
+    const messages = PLAY_CAPTCHA_MESSAGES[this.locale]
+    const countdown = this.challengeSecondsRemaining
+    const countdownText =
+      countdown === null
+        ? null
+        : `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}`
     return html`<div class=${`clawcap-glass${this.verified ? ' clawcap-glass--dim' : ''}`}>
+      ${countdownText === null
+        ? nothing
+        : html`<span
+            class=${`cc-countdown${countdown !== null && countdown <= 10 ? ' is-low' : ''}`}
+            data-countdown=${countdownText}
+            role="timer"
+            aria-label=${messages.timeRemaining(countdown ?? 0)}
+          ></span>`}
       <div class="cc-scene">
         <div class="cc-rail"></div>
         <div class="cc-trolley" aria-hidden="true"></div>

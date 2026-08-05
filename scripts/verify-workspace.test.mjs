@@ -101,7 +101,11 @@ void test('defines the vanilla playground workspace contract', () => {
   )?.[1]
   assert.ok(verifyListener)
   assert.match(verifyListener, /detail\.source/)
-  assert.match(verifyListener, /result\.textContent\s*=\s*`Verified: \$\{detail\.source\}`/)
+  assert.match(
+    verifyListener,
+    /resultMessage\.textContent\s*=\s*`verify · source=\$\{detail\.source\}`/,
+  )
+  assert.match(vanillaSource, /result\.dataset\.state\s*=\s*['"]success['"]/)
   assert.doesNotMatch(vanillaSource, /TOY_IDS|TOY_META|ToyId|target-select|\.target\b/)
   for (const id of ['width-toggle', 'result', 'captcha-shell']) {
     assert.match(vanillaSource, new RegExp(`['"]${id}['"]`))
@@ -136,14 +140,14 @@ void test('defines the React direct-consumer playground contract', () => {
   assert.doesNotMatch(extractJsxButton(reactSource, 'width-toggle'), /aria-pressed/)
   assertReactStrictMode(reactSource)
 
-  const verifyEffect = reactSource.match(
-    /useEffect\(\(\) => \{([\s\S]*?)return \(\) => captcha\.removeEventListener\(['"]verify['"],\s*onVerify\)\s*\},\s*\[\]\)/,
-  )
+  const verifyEffect = reactSource.match(/useEffect\(\(\) => \{([\s\S]*?)\n  \}, \[\]\)/)
   assert.ok(verifyEffect, 'React verify listener must have an empty-dependency cleanup effect')
   assert.match(verifyEffect[1], /const onVerify\s*=\s*\(event:\s*Event\)\s*=>/)
   assert.match(verifyEffect[1], /detail\.source/)
   assert.match(verifyEffect[1], /captcha\.addEventListener\(['"]verify['"],\s*onVerify\)/)
-
+  assert.match(verifyEffect[1], /captcha\.removeEventListener\(['"]verify['"],\s*onVerify\)/)
+  assert.match(verifyEffect[1], /captcha\.addEventListener\(['"]click['"],\s*onClick\)/)
+  assert.match(verifyEffect[1], /captcha\.removeEventListener\(['"]click['"],\s*onClick\)/)
   assert.match(reactJsx, /ref\??:\s*React\.Ref<PlayCaptcha>/)
   assert.match(reactJsx, /['"]show-answer['"]\??:\s*boolean/)
   assert.match(reactJsx, /title\??:\s*string/)
@@ -186,7 +190,7 @@ void test('defines the Vue direct-consumer playground contract', () => {
   assert.match(captchaWatch, /current\?\.addEventListener\(['"]verify['"],\s*onVerify\)/)
   assert.match(
     vueSource,
-    /onBeforeUnmount\(\(\)\s*=>\s*captcha\.value\?\.removeEventListener\(['"]verify['"],\s*onVerify\)\)/,
+    /onBeforeUnmount\(\(\)\s*=>\s*\{[\s\S]*?removeEventListener\(['"]click['"],\s*onClick\)[\s\S]*?removeEventListener\(['"]verify['"],\s*onVerify\)[\s\S]*?\}\)/,
   )
 })
 

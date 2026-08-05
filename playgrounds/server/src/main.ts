@@ -27,7 +27,10 @@ app.innerHTML = `
     <section class="server-grid">
       <section class="demo-stage" aria-label="Server-backed captcha preview">
         <div id="captcha-shell"></div>
-        <p id="result" aria-live="polite">Requesting a server-issued challenge…</p>
+        <p id="result" class="demo-result" data-state="pending" role="status" aria-live="polite" aria-atomic="true">
+          <span class="demo-result-label">Consumer event</span>
+          <span class="demo-result-message">Waiting for a server verify or verification-error event.</span>
+        </p>
       </section>
       <aside class="server-contract" aria-label="Protocol activity">
         <h2>Protocol activity</h2>
@@ -43,6 +46,7 @@ app.innerHTML = `
 
 const shell = requireElement<HTMLDivElement>('#captcha-shell')
 const result = requireElement<HTMLParagraphElement>('#result')
+const resultMessage = requireElement<HTMLSpanElement>('.demo-result-message')
 const log = requireElement<HTMLOListElement>('#protocol-log')
 const newChallenge = requireElement<HTMLButtonElement>('#new-challenge')
 const captcha = document.createElement('play-captcha') as PlayCaptcha
@@ -61,19 +65,22 @@ function addLog(message: string): void {
 
 captcha.addEventListener('verification-error', (event) => {
   const detail = (event as CustomEvent<{ kind: string }>).detail
-  result.textContent = `Server rejected or failed: ${detail.kind}`
+  result.dataset.state = 'error'
+  resultMessage.textContent = `verification-error · kind=${detail.kind}`
   addLog(`verification-error · ${detail.kind}`)
 })
 
 captcha.addEventListener('verify', (event) => {
   const detail = (event as CustomEvent<PlayCaptchaVerifyEventDetail>).detail
-  result.textContent = `Verified remotely · token ${detail.token ?? '(none)'}`
+  result.dataset.state = 'success'
+  resultMessage.textContent = `verify · source=${detail.source} · token=${detail.token ?? '(none)'}`
   addLog(`verify · source=${detail.source} · token=${detail.token ?? '(none)'}`)
 })
 
 newChallenge.addEventListener('click', () => {
   captcha.shadowRoot?.querySelector<HTMLButtonElement>('.clawcap-refresh')?.click()
-  result.textContent = 'Requesting a fresh server-issued challenge…'
+  result.dataset.state = 'pending'
+  resultMessage.textContent = 'Challenge refreshed; waiting for the next consumer event.'
   addLog('create · refreshed mahjong')
 })
 

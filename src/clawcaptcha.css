@@ -220,58 +220,32 @@ button.clawcap-help:focus-visible {
   outline-offset: 2px;
 }
 
-/* header: framed icon tile + title + one-line tagline */
+/* Header: a compact rule primer followed by the interaction prompt. */
 .clawcap-info-head {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 4px 0 18px;
+  margin: 8px 4px 16px;
 }
 
-.clawcap-info-tile {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  margin-bottom: 12px;
-  border-radius: 17px;
-  background: var(--cc-fill);
-  box-shadow:
-    inset 0 0 0 0.5px rgba(60, 60, 67, 0.1),
-    0 4px 12px -4px rgba(20, 20, 30, 0.18);
-}
-
-.clawcap-info-tile img {
-  display: block;
-  width: 40px;
-  height: 40px;
-}
-
-.clawcap-info-title {
+.clawcap-info-rule-title {
   margin: 0;
-  font-size: 1.125rem; /* 18px — one step under the card title */
+  font-size: 1rem;
   font-weight: 700;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.016em;
 }
 
-.clawcap-info-ver {
-  margin-left: 3px;
-  padding: 1px 5px;
-  border-radius: 5px;
-  background: var(--cc-fill-2);
-  font-size: 0.625rem; /* 10px */
-  font-weight: 700;
-  letter-spacing: 0.02em;
+.clawcap-info-rule {
+  margin: 7px 0 0;
   color: var(--cc-muted);
-  vertical-align: 0.28em;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  letter-spacing: -0.004em;
 }
 
 .clawcap-info-tag {
-  margin: 5px 0 0;
-  font-size: 0.8125rem; /* 13px body */
+  margin: 10px 0 0;
+  color: var(--cc-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
   letter-spacing: -0.006em;
-  color: var(--cc-muted);
 }
 
 /* steps: numbered rows, hairline-separated */
@@ -577,6 +551,35 @@ button.clawcap-help:focus-visible {
   transform-origin: top left;
   z-index: 40;
 }
+.cc-countdown {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  z-index: 35;
+  min-width: 43px;
+  padding: 4px 7px;
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #48484a;
+  box-shadow: 0 2px 8px rgba(30, 30, 40, 0.08);
+  font-size: 0.75rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
+.cc-countdown::before {
+  content: attr(data-countdown);
+}
+
+.cc-countdown.is-low {
+  border-color: rgba(196, 52, 52, 0.2);
+  background: rgba(255, 242, 240, 0.9);
+  color: #a52020;
+}
 
 /* the show is over: the machine softly steps back */
 .clawcap-glass--dim {
@@ -847,10 +850,9 @@ button.clawcap-help:focus-visible {
   filter: blur(0.4px);
 }
 
-/* drop tray = a HATCH: a raised lid split down the middle, sitting in a recessed
-   bezel over a dark chute. The doors part to swallow a correct catch; a wrong
-   toy meets them closed and is rejected. Built in the iOS-register (grouped
-   surfaces, hairlines, precise inset shadows) so it reads as one machine. */
+/* Drop tray = a hatch: a raised lid split down the middle, sitting in a recessed
+   bezel over a dark chute. Every accepted drop opens the doors before local or
+   server verification selects the final success or rejection state. */
 .cc-tray {
   position: relative;
   flex: 1;

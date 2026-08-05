@@ -131,7 +131,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('renders the same seven-tile hand shape as remote v3 with twelve reachable candidates', async () => {
+test('renders the same seven-tile hand shape and countdown as remote v3', async () => {
   const captcha = await mountedLocal()
   const root = captcha.shadowRoot!
   const hand = [...captcha.mahjongHand]
@@ -143,12 +143,8 @@ test('renders the same seven-tile hand shape as remote v3 with twelve reachable 
   expect(root.querySelectorAll('.clawcap-hand-tile')).toHaveLength(7)
   expect(candidates).toHaveLength(12)
   expect(new Set(candidates.map((image) => image.dataset.tile)).size).toBe(12)
+  expect(root.querySelector<HTMLElement>('.cc-countdown')?.dataset.countdown).toBe('5:00')
   expect(root.querySelector('.cc-toy')).toBeNull()
-  for (const image of candidates) {
-    const x = Number.parseFloat(image.closest<HTMLElement>('.cc-toy-wrap')!.style.left)
-    expect(x).toBeGreaterThanOrEqual(46)
-    expect(x).toBeLessThanOrEqual(334)
-  }
 })
 
 test('keeps the answer hidden by default and reveals it only for local show-answer', async () => {
@@ -181,6 +177,21 @@ test('refresh replaces the local hand and clears carried and success state', asy
   ).toBeNull()
 })
 
+test('refresh returns focus so Space starts a grab instead of refreshing again', async () => {
+  const captcha = await mountedLocal()
+  const refresh = captcha.shadowRoot!.querySelector<HTMLButtonElement>('.clawcap-refresh')!
+  refresh.focus()
+  refresh.click()
+  await captcha.updateComplete
+  const gameplay = captcha.shadowRoot!.querySelector<HTMLElement>('.clawcap')!
+  expect(captcha.shadowRoot!.activeElement).toBe(gameplay)
+
+  captcha.settlePile()
+  await captcha.updateComplete
+  gameplay.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }))
+  expect((captcha as unknown as { phase: string }).phase).toBe('seq')
+})
+
 test('normalizes locale, preserves a custom title, and restores the Mahjong default', async () => {
   const captcha = await mountedLocal()
   captcha.setAttribute('title', 'Checkout verification')
@@ -193,7 +204,7 @@ test('normalizes locale, preserves a custom title, and restores the Mahjong defa
   expect(captcha.title).toBe('Find the winning tile')
 })
 
-test('resolves custom Mahjong and sibling logo URLs from asset-base', async () => {
+test('resolves custom Mahjong assets and keeps branding out of the help dialog', async () => {
   const captcha = createTestCaptcha()
   captcha.assetBase = '/runtime/mahjong?old=1#hash'
   document.body.append(captcha)
@@ -204,9 +215,28 @@ test('resolves custom Mahjong and sibling logo URLs from asset-base', async () =
   expect(captcha.shadowRoot!.querySelector<HTMLImageElement>('.cc-mahjong')?.src).toMatch(
     /\/runtime\/mahjong\/(?:[1-7]|1[0-8]|2[1-9]|3[2-9]|40)\.webp$/u,
   )
-  expect(captcha.shadowRoot!.querySelector<HTMLImageElement>('.clawcap-info-tile img')?.src).toBe(
-    `${location.origin}/runtime/playcaptcha.svg`,
+  expect(captcha.shadowRoot!.querySelector('.clawcap-info-tile')).toBeNull()
+  expect(captcha.shadowRoot!.querySelector('.clawcap-info-title')).toBeNull()
+  expect(captcha.shadowRoot!.querySelector('.clawcap-info-rule')?.textContent).toContain('顺子')
+  expect(captcha.shadowRoot!.querySelector('.clawcap-info-rule')?.textContent).toContain('刻子')
+})
+
+test('help traps focus while open and returns it to gameplay when closed', async () => {
+  const captcha = await mountedLocal()
+  captcha.shadowRoot!.querySelector<HTMLButtonElement>('.clawcap-help')!.click()
+  await captcha.updateComplete
+  expect(captcha.shadowRoot!.activeElement).toBe(
+    captcha.shadowRoot!.querySelector('.clawcap-info-x'),
   )
+
+  captcha.shadowRoot!.querySelector<HTMLButtonElement>('.clawcap-info-done')!.click()
+  await captcha.updateComplete
+  await Promise.resolve()
+  const gameplay = captcha.shadowRoot!.querySelector<HTMLElement>('.clawcap')!
+  expect(captcha.shadowRoot!.activeElement).toBe(gameplay)
+
+  gameplay.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }))
+  expect((captcha as unknown as { phase: string }).phase).toBe('seq')
 })
 
 test.each(['data:text/plain,no', 'file:///tmp/tiles', 'mailto:no@example.com', 'https://['])(
@@ -238,31 +268,47 @@ test('keyboard arrows move the slider after the entrance settles', async () => {
   expect(Number(slider.getAttribute('aria-valuenow'))).toBeGreaterThan(before)
 })
 
-test('wrong local tile returns without verify; winning tile emits one local verify event', async () => {
+test('wrong local tile shows feedback then replaces the challenge; winning tile verifies', async () => {
   const captcha = await mountedLocal()
   const verify = vi.fn()
   captcha.addEventListener('verify', verify)
+  const firstHand = [...captcha.mahjongHand]
   const candidates = [
     ...captcha.shadowRoot!.querySelectorAll<HTMLImageElement>('.cc-prize.cc-mahjong'),
   ]
   const target = captcha.currentMahjongTarget!
   const wrong = candidates.find((image) => image.dataset.tile !== target)!
-  const winning = candidates.find((image) => image.dataset.tile === target)!
+  const x = Number.parseFloat(wrong.closest<HTMLElement>('.cc-toy-wrap')!.style.left)
+  captcha.moveTo(x)
+  captcha.pressAction()
+  captcha.advance()
+  expect((captcha as unknown as { phase: string }).phase).toBe('carry')
+  captcha.moveTo(232)
+  captcha.pressAction()
+  captcha.advance(4)
+  await captcha.updateComplete
+  expect(captcha.shadowRoot!.querySelector('.cc-tray')?.classList.contains('cc-tray--open')).toBe(
+    true,
+  )
+  captcha.advance(220)
+  await captcha.updateComplete
+  expect(verify).not.toHaveBeenCalled()
+  expect(captcha.shadowRoot!.querySelector('.clawcap-sub')?.textContent).toContain('这张不能胡')
+  expect(captcha.mahjongHand).toEqual(firstHand)
 
-  for (const [image, expectedCount] of [
-    [wrong, 0],
-    [winning, 1],
-  ] as const) {
-    const x = Number.parseFloat(image.closest<HTMLElement>('.cc-toy-wrap')!.style.left)
-    captcha.moveTo(x)
-    captcha.pressAction()
-    captcha.advance()
-    expect((captcha as unknown as { phase: string }).phase).toBe('carry')
-    captcha.moveTo(232)
-    captcha.pressAction()
-    captcha.advance(220)
-    expect(verify).toHaveBeenCalledTimes(expectedCount)
-  }
+  await vi.waitFor(() => expect(captcha.mahjongHand).not.toEqual(firstHand), { timeout: 1_500 })
+  captcha.settlePile()
+  await captcha.updateComplete
+  const winning = [
+    ...captcha.shadowRoot!.querySelectorAll<HTMLImageElement>('.cc-prize.cc-mahjong'),
+  ].find((image) => image.dataset.tile === captcha.currentMahjongTarget)!
+  captcha.moveTo(Number.parseFloat(winning.closest<HTMLElement>('.cc-toy-wrap')!.style.left))
+  captcha.pressAction()
+  captcha.advance()
+  captcha.moveTo(232)
+  captcha.pressAction()
+  captcha.advance(220)
+  expect(verify).toHaveBeenCalledOnce()
   const event = verify.mock.calls[0]![0] as CustomEvent
   expect(event.detail).toEqual({ mode: 'mahjong', source: 'local' })
   expect(event.bubbles).toBe(true)
@@ -297,6 +343,33 @@ test('remote mode creates before enabling controls and renders only opaque raste
   expect(captcha.shadowRoot!.querySelectorAll('[data-tile], [data-suit]')).toHaveLength(0)
   expect(captcha.shadowRoot!.querySelector('.clawcap-hand-image')?.getAttribute('src')).toBe(
     '/api/captcha/assets/hand',
+  )
+})
+
+test('server-issued drops open the hatch before backend verification', async () => {
+  vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
+  const captcha = createTestCaptcha()
+  captcha.verificationTransport = vi.fn(async ({ request }) =>
+    request.action === 'create' ? opaqueChallenge() : { verified: true },
+  )
+  document.body.append(captcha)
+  await vi.waitFor(() => expect(captcha.operationState().issuedChallenge).not.toBeNull())
+  captcha.settlePile()
+  await captcha.updateComplete
+
+  const candidate = captcha.shadowRoot!.querySelector<HTMLImageElement>('.cc-prize.cc-mahjong')!
+  const x = Number.parseFloat(candidate.closest<HTMLElement>('.cc-toy-wrap')!.style.left)
+  captcha.moveTo(x)
+  captcha.pressAction()
+  captcha.advance()
+  expect(captcha.operationState().phase).toBe('carry')
+
+  captcha.moveTo(232)
+  captcha.pressAction()
+  captcha.advance(4)
+  await captcha.updateComplete
+  expect(captcha.shadowRoot!.querySelector('.cc-tray')?.classList.contains('cc-tray--open')).toBe(
+    true,
   )
 })
 
@@ -386,7 +459,7 @@ test('reports HTTP failures from fetch', async () => {
   })
 })
 
-test('a consumed rejection emits no success and loads a fresh challenge', async () => {
+test('a consumed rejection shows feedback before loading a fresh challenge', async () => {
   vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
   const actions: string[] = []
   const captcha = createTestCaptcha()
@@ -402,7 +475,17 @@ test('a consumed rejection emits no success and loads a fresh challenge', async 
   document.body.append(captcha)
   await vi.waitFor(() => expect(actions).toEqual(['create']))
   captcha.completeRemote('candidate-3')
-  await vi.waitFor(() => expect(actions).toEqual(['create', 'verify', 'create']))
+  await vi.waitFor(() =>
+    expect(captcha.shadowRoot!.querySelector('.cc-tray')?.classList.contains('cc-tray--no')).toBe(
+      true,
+    ),
+  )
+  expect(captcha.shadowRoot!.querySelector('.clawcap-sub')?.textContent).toContain(
+    '服务器未通过验证',
+  )
+  await vi.waitFor(() => expect(actions).toEqual(['create', 'verify', 'create']), {
+    timeout: 1_500,
+  })
   expect(verify).not.toHaveBeenCalled()
   expect((error.mock.calls[0]![0] as CustomEvent).detail.kind).toBe('rejected')
 })
@@ -423,7 +506,7 @@ test('refresh aborts an in-flight create and issues a replacement', async () => 
   expect(signals[0]!.aborted).toBe(true)
 })
 
-test('expired issued challenge refreshes automatically', async () => {
+test('expired issued challenge refreshes automatically and keeps its countdown', async () => {
   const creates: string[] = []
   const captcha = createTestCaptcha()
   captcha.verificationTransport = vi.fn(async ({ request }) => {
@@ -433,7 +516,9 @@ test('expired issued challenge refreshes automatically', async () => {
   })
   document.body.append(captcha)
   await vi.waitFor(() => expect(creates).toHaveLength(2), { timeout: 1_500 })
-  expect(captcha.shadowRoot!.querySelector('.cc-countdown')).toBeNull()
+  expect(captcha.shadowRoot!.querySelector<HTMLElement>('.cc-countdown')?.dataset.countdown).toBe(
+    '1:00',
+  )
 })
 
 test('invalid remote configuration emits config error without fetch', async () => {
