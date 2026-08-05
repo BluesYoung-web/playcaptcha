@@ -1,5 +1,5 @@
 {
-  "name": "playcaptcha",
+  "name": "@bluesyoung/playcaptcha",
   "version": "0.1.0",
   "description": "Mahjong winning-tile captcha web component with local and server-issued verification",
   "license": "MIT",
@@ -17,6 +17,10 @@
       "import": "./dist/index.mjs"
     },
     "./assets/*": "./assets/*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "dev": "vp dev",

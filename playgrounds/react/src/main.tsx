@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { type PlayCaptcha, type PlayCaptchaVerifyEventDetail } from 'playcaptcha'
-import 'playcaptcha'
+import { type PlayCaptcha, type PlayCaptchaVerifyEventDetail } from '@bluesyoung/playcaptcha'
+import '@bluesyoung/playcaptcha'
 import '../../shared/demo.css'
 
 type ResultState = { state: 'pending' | 'success'; message: string }

@@ -22,6 +22,7 @@ import {
   verifyComponentRegistration,
   verifyInstalledPackageSource,
   verifyResourceFiles,
+  packageInstallPath,
 } from './verify-release-artifacts.mjs'
 
 const supportedOptions = new Set(['--skip-build', '--keep-fixtures'])
@@ -100,7 +101,7 @@ function sourceFiles(path) {
   })
 }
 
-export function auditFixtureSourceText(framework, source) {
+export function auditFixtureSourceText(framework, source, packageName = '@bluesyoung/playcaptcha') {
   const sourceFile = ts.createSourceFile(
     `${framework}.tsx`,
     source,
@@ -112,17 +113,17 @@ export function auditFixtureSourceText(framework, source) {
     (statement) =>
       ts.isImportDeclaration(statement) &&
       ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text === 'playcaptcha',
+      statement.moduleSpecifier.text === packageName,
   )
   if (!imports.some((statement) => statement.importClause)) {
-    throw new Error(`${framework} fixture source does not import a playcaptcha public API`)
+    throw new Error(`${framework} fixture source does not import a ${packageName} public API`)
   }
   if (!imports.some((statement) => !statement.importClause)) {
-    throw new Error(`${framework} fixture source does not side-effect import playcaptcha`)
+    throw new Error(`${framework} fixture source does not side-effect import ${packageName}`)
   }
 }
 
-function auditFixtureSource(framework) {
+function auditFixtureSource(framework, packageName) {
   const sources = sourceFiles(join(project, 'playgrounds', framework, 'src')).map((path) => ({
     contents: readFileSync(path, 'utf8'),
     path,
@@ -135,13 +136,13 @@ function auditFixtureSource(framework) {
       )
     })
     .join('\n')
-  auditFixtureSourceText(framework, executableSource)
+  auditFixtureSourceText(framework, executableSource, packageName)
 }
 
-function copyFixtures(temporary, tarball, packageManager) {
+function copyFixtures(temporary, tarball, packageManager, packageName) {
   return Object.fromEntries(
     frameworks.map((framework) => {
-      auditFixtureSource(framework)
+      auditFixtureSource(framework, packageName)
       const fixture = safeFixturePath(temporary, join(temporary, framework))
       cpSync(join(project, 'playgrounds', framework), fixture, { recursive: true })
       const fixtureShared = safeFixturePath(temporary, join(fixture, 'shared'))
@@ -161,7 +162,7 @@ function copyFixtures(temporary, tarball, packageManager) {
 
       const manifestPath = join(fixture, 'package.json')
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-      manifest.dependencies.playcaptcha = `file:${tarball}`
+      manifest.dependencies = { ...manifest.dependencies, [packageName]: `file:${tarball}` }
       manifest.packageManager = packageManager
       manifest.pnpm = {
         ...manifest.pnpm,
@@ -177,8 +178,14 @@ function copyFixtures(temporary, tarball, packageManager) {
   )
 }
 
-export function verifyOutputText(framework, dist, exactPaths = {}) {
+export function verifyOutputText(
+  framework,
+  dist,
+  exactPaths = {},
+  packageName = '@bluesyoung/playcaptcha',
+) {
   const portability = auditOutputText(framework, dist, { project, ...exactPaths })
+  const escapedPackageName = packageName.replaceAll(/[.*+?^${}()|[\]\\]/gu, '\\$&')
   for (const path of filesRecursively(dist)) {
     if (!['.html', '.js', '.css', '.map', '.json', '.svg'].includes(extname(path))) continue
     const source = readFileSync(path, 'utf8')
@@ -188,8 +195,11 @@ export function verifyOutputText(framework, dist, exactPaths = {}) {
       ['project absolute path', source.includes(project)],
       ['playground source path', /playgrounds[\\/](?:vanilla|react|vue|server)[\\/]src/u],
       [
-        'bare playcaptcha import',
-        /(?:\bfrom\s*["']playcaptcha["']|\bimport\s*(?:["']playcaptcha["']|\(\s*["']playcaptcha["']))/u,
+        `bare ${packageName} import`,
+        new RegExp(
+          `(?:\\bfrom\\s*["']${escapedPackageName}["']|\\bimport\\s*(?:["']${escapedPackageName}["']|\\(\\s*["']${escapedPackageName}["']))`,
+          'u',
+        ),
       ],
     ]
     for (const [label, check] of forbidden) {
@@ -202,7 +212,7 @@ export function verifyOutputText(framework, dist, exactPaths = {}) {
 
 function verifyPackageSource(framework, fixture, tarball, packedManifest) {
   const manifest = JSON.parse(readFileSync(join(fixture, 'package.json'), 'utf8'))
-  if (manifest.dependencies?.playcaptcha !== `file:${tarball}`) {
+  if (manifest.dependencies?.[packedManifest.name] !== `file:${tarball}`) {
     throw new Error(`${framework} fixture does not depend on the packed tarball`)
   }
   return verifyInstalledPackageSource(fixture, project, packedManifest)
@@ -216,14 +226,19 @@ async function verifyOutput(temporary, framework, fixture, packed) {
   const scripts = files.filter((path) => extname(path) === '.js')
   if (scripts.length === 0) throw new Error(`${framework} build is missing JavaScript`)
   const resources = verifyResourceFiles(framework, dist)
-  const installedPath = join(fixture, 'node_modules', 'playcaptcha')
-  const portability = verifyOutputText(framework, dist, {
-    project: [project, realpathSync(project)],
-    temporary: [temporary, realpathSync(temporary)],
-    fixture: [fixture, realpathSync(fixture)],
-    tarball: [packed.tarball, realpathSync(packed.tarball)],
-    'installed package': [installedPath, realpathSync(installedPath)],
-  })
+  const installedPath = packageInstallPath(fixture, packed.manifest.name)
+  const portability = verifyOutputText(
+    framework,
+    dist,
+    {
+      project: [project, realpathSync(project)],
+      temporary: [temporary, realpathSync(temporary)],
+      fixture: [fixture, realpathSync(fixture)],
+      tarball: [packed.tarball, realpathSync(packed.tarball)],
+      'installed package': [installedPath, realpathSync(installedPath)],
+    },
+    packed.manifest.name,
+  )
   const component = await verifyComponentRegistration(framework, dist)
   const packageSource = verifyPackageSource(framework, fixture, packed.tarball, packed.manifest)
 
@@ -299,7 +314,7 @@ export async function main(options = process.argv.slice(2), env = process.env) {
     if (!skipBuild) run(pnpm, ['run', 'playgrounds:build'], project)
     const packed = packTarball(temporary)
     if (!isAbsolute(packed.tarball)) throw new Error('npm pack tarball path must be absolute')
-    const fixtures = copyFixtures(temporary, packed.tarball, packageManager)
+    const fixtures = copyFixtures(temporary, packed.tarball, packageManager, rootManifest.name)
     const outputs = {}
 
     for (const framework of frameworks) {

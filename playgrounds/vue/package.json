@@ -9,7 +9,7 @@
     "build": "vp build"
   },
   "dependencies": {
-    "playcaptcha": "workspace:*",
+    "@bluesyoung/playcaptcha": "workspace:*",
     "vue": "^3.5.40"
   },
   "devDependencies": {

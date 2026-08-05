@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
-import { type PlayCaptcha, type PlayCaptchaVerifyEventDetail } from 'playcaptcha'
+import { type PlayCaptcha, type PlayCaptchaVerifyEventDetail } from '@bluesyoung/playcaptcha'
 
 type ResultState = 'pending' | 'success' | 'inactive'
 

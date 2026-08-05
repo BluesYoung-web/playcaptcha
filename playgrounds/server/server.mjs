@@ -11,7 +11,7 @@ import {
   createMahjongChallenge,
   sortMahjongTiles,
   winningTilesForCompactHand,
-} from 'playcaptcha'
+} from '@bluesyoung/playcaptcha'
 
 const options = new Set(process.argv.slice(2))
 const readOption = (name, fallback) => {

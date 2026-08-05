@@ -47,10 +47,25 @@ void test('rejects a React root render without StrictMode', () => {
   assert.throws(() => assertReactStrictMode('createRoot(root).render(<App />)'), /StrictMode/)
 })
 
-void test('keeps the publishable playcaptcha package at the workspace root', () => {
-  assert.equal(packageJson.name, 'playcaptcha')
+void test('keeps the publishable scoped package at the workspace root', () => {
+  assert.equal(packageJson.name, '@bluesyoung/playcaptcha')
   assert.notEqual(packageJson.private, true)
   assert.equal(packageJson.packageManager, 'pnpm@10.33.0')
+})
+
+void test('publishes the root package only from matching version tags', () => {
+  const workflow = readFileSync('.github/workflows/publish.yml', 'utf8')
+
+  assert.deepEqual(packageJson.publishConfig, { access: 'public', provenance: true })
+  assert.match(workflow, /^on:\n  push:\n    tags:\n      - 'v\*'$/m)
+  assert.match(workflow, /^permissions:\n  contents: read\n  id-token: write$/m)
+  assert.match(workflow, /uses: pnpm\/action-setup@v4\n        with:\n          version: 10\.33\.0/)
+  assert.match(workflow, /node-version: '22'/)
+  assert.match(workflow, /pnpm install --frozen-lockfile/)
+  assert.match(workflow, /test "\$\{GITHUB_REF_NAME\}" = "v\$\{package_version\}"/)
+  assert.match(workflow, /run: pnpm prepublishOnly/)
+  assert.match(workflow, /npm publish --provenance --access public --ignore-scripts/)
+  assert.match(workflow, /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_TOKEN \}\}/)
 })
 
 void test('registers only playground packages and centralizes tool overrides', () => {
@@ -89,12 +104,12 @@ void test('defines the vanilla playground workspace contract', () => {
 
   assert.equal(vanillaPackage.name, '@playcaptcha/playground-vanilla')
   assert.equal(vanillaPackage.private, true)
-  assert.equal(vanillaPackage.dependencies.playcaptcha, 'workspace:*')
+  assert.equal(vanillaPackage.dependencies[packageJson.name], 'workspace:*')
   assert.match(vanillaPackage.scripts.dev, /--port 4183\b/)
   assert.match(vanillaPackage.scripts.dev, /--strictPort\b/)
 
-  assert.match(vanillaSource, /from ['"]playcaptcha['"]/)
-  assert.match(vanillaSource, /import ['"]playcaptcha['"]/)
+  assert.match(vanillaSource, /from ['"]@bluesyoung\/playcaptcha['"]/)
+  assert.match(vanillaSource, /import ['"]@bluesyoung\/playcaptcha['"]/)
   assert.match(vanillaSource, /addEventListener\(['"]verify['"]/)
   const verifyListener = vanillaSource.match(
     /captcha\.addEventListener\(['"]verify['"],\s*\(event\)\s*=>\s*\{([\s\S]*?)\n\}\)/,
@@ -126,14 +141,14 @@ void test('defines the React direct-consumer playground contract', () => {
 
   assert.equal(reactPackage.name, '@playcaptcha/playground-react')
   assert.equal(reactPackage.private, true)
-  assert.equal(reactPackage.dependencies.playcaptcha, 'workspace:*')
+  assert.equal(reactPackage.dependencies[packageJson.name], 'workspace:*')
   assert.match(reactPackage.scripts.dev, /--port 4184\b/)
   assert.match(reactPackage.scripts.dev, /--strictPort\b/)
   assert.match(reactConfig, /plugins:\s*\[react\(\)\]/)
   assert.doesNotMatch(reactConfig, /\bany\b|@ts-ignore|\bas\s+(?:unknown|UserConfig)/)
 
-  assert.match(reactSource, /from ['"]playcaptcha['"]/)
-  assert.match(reactSource, /import ['"]playcaptcha['"]/)
+  assert.match(reactSource, /from ['"]@bluesyoung\/playcaptcha['"]/)
+  assert.match(reactSource, /import ['"]@bluesyoung\/playcaptcha['"]/)
   assert.equal(reactSource.match(/<play-captcha\b/g)?.length, 1)
   assert.doesNotMatch(reactSource, /TOY_IDS|TOY_META|ToyId|target-select|\btarget\b/)
   assertStableIds(reactSource)
@@ -163,14 +178,14 @@ void test('defines the Vue direct-consumer playground contract', () => {
 
   assert.equal(vuePackage.name, '@playcaptcha/playground-vue')
   assert.equal(vuePackage.private, true)
-  assert.equal(vuePackage.dependencies.playcaptcha, 'workspace:*')
+  assert.equal(vuePackage.dependencies[packageJson.name], 'workspace:*')
   assert.match(vuePackage.scripts.dev, /--port 4185\b/)
   assert.match(vuePackage.scripts.dev, /--strictPort\b/)
   assert.match(vueConfig, /isCustomElement:\s*\(tag\)\s*=>\s*tag\s*===\s*['"]play-captcha['"]/)
   assert.doesNotMatch(vueConfig, /\bany\b|@ts-ignore|\bas\s+(?:unknown|UserConfig)/)
 
-  assert.match(vueSource, /from ['"]playcaptcha['"]/)
-  assert.match(vueEntry, /import ['"]playcaptcha['"]/)
+  assert.match(vueSource, /from ['"]@bluesyoung\/playcaptcha['"]/)
+  assert.match(vueEntry, /import ['"]@bluesyoung\/playcaptcha['"]/)
   assert.match(vueEntry, /shared\/demo\.css['"]/)
   assert.equal(vueSource.match(/<play-captcha\b/g)?.length, 1)
   assert.doesNotMatch(vueSource, /TOY_IDS|TOY_META|ToyId|target-select|\btarget\b/)
@@ -201,11 +216,11 @@ void test('defines the server-issued challenge playground contract', () => {
 
   assert.equal(serverPackage.name, '@playcaptcha/playground-server')
   assert.equal(serverPackage.private, true)
-  assert.equal(serverPackage.dependencies.playcaptcha, 'workspace:*')
+  assert.equal(serverPackage.dependencies[packageJson.name], 'workspace:*')
   assert.match(serverPackage.scripts.dev, /--port 4186\b/)
   assert.match(serverPackage.scripts.dev, /--host 0\.0\.0\.0\b/)
-  assert.match(browserSource, /from ['"]playcaptcha['"]/)
-  assert.match(browserSource, /import ['"]playcaptcha['"]/)
+  assert.match(browserSource, /from ['"]@bluesyoung\/playcaptcha['"]/)
+  assert.match(browserSource, /import ['"]@bluesyoung\/playcaptcha['"]/)
   assert.match(browserSource, /verifyEndpoint\s*=\s*['"]\/api\/captcha['"]/)
   assert.match(browserSource, /addEventListener\(['"]verify['"]/)
   assert.match(browserSource, /addEventListener\(['"]verification-error['"]/)

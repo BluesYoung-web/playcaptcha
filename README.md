@@ -8,11 +8,11 @@
 ## 安装
 
 ```bash
-pnpm add playcaptcha
+pnpm add @bluesyoung/playcaptcha
 ```
 
 ```ts
-import 'playcaptcha'
+import '@bluesyoung/playcaptcha'
 ```
 
 ## 本地纯前端
@@ -23,7 +23,7 @@ import 'playcaptcha'
 <play-captcha locale="zh-CN"></play-captcha>
 
 <script type="module">
-  import 'playcaptcha'
+  import '@bluesyoung/playcaptcha'
 
   document.querySelector('play-captcha').addEventListener('verify', (event) => {
     console.log(event.detail) // { mode: 'mahjong', source: 'local' }
@@ -209,7 +209,7 @@ import {
   type PlayCaptchaLocale,
   type PlayCaptchaVerifyEventDetail,
   type PlayCaptchaVerificationTransport,
-} from 'playcaptcha'
+} from '@bluesyoung/playcaptcha'
 ```
 
 组件公开只读状态：
@@ -225,14 +225,13 @@ import {
 <play-captcha asset-base="/assets/majiang_ui/"></play-captcha>
 ```
 
-组件从该目录读取 `<assetValue>.webp`，从父目录读取 `playcaptcha.svg`。只接受 HTTP(S) hierarchy URL；query/hash 会被移除，缺失尾部 `/` 会自动补全。
+组件从该目录读取 `<assetValue>.webp`。只接受 HTTP(S) hierarchy URL；query/hash 会被移除，缺失尾部 `/` 会自动补全。
 
 npm 包包含：
 
 - `assets/majiang_ui/` 下 42 张最新 WebP：标准牌 34 张，加 `46.webp`–`53.webp` 八张花/季节牌。
-- `assets/playcaptcha.svg`。
 
-当前规则只引用 34 张标准牌，因此消费者 bundle 的运行时资源精确为 35 项：34 张 WebP + logo。八张花/季节牌仅作为完整最新源素材打包，不进入当前挑战 bundle。
+当前规则只引用 34 张标准牌，因此消费者 bundle 的运行时资源精确为 34 张 WebP。八张花/季节牌仅作为完整最新源素材打包，不进入当前挑战 bundle。
 
 Classic script：
 

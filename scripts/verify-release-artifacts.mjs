@@ -4,25 +4,33 @@ import { dirname, extname, isAbsolute, join, posix, relative, resolve, sep } fro
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
+export function packageInstallPath(root, packageName) {
+  const segments = packageName.split('/')
+  if (
+    segments.some((segment) => !segment || segment === '.' || segment === '..') ||
+    (packageName.startsWith('@') && segments.length !== 2) ||
+    (!packageName.startsWith('@') && segments.length !== 1)
+  ) {
+    throw new Error(`Invalid package name: ${packageName}`)
+  }
+  return join(root, 'node_modules', ...segments)
+}
+
 const STANDARD_MAHJONG_VALUES = [
   1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 29, 32,
   33, 34, 35, 36, 37, 38, 39, 40,
 ]
 const PACKAGED_MAHJONG_VALUES = [...STANDARD_MAHJONG_VALUES, 46, 47, 48, 49, 50, 51, 52, 53]
 
-export const EXPECTED_PACKAGE_ASSETS = [
-  ...PACKAGED_MAHJONG_VALUES.map((value) => `assets/majiang_ui/${value}.webp`),
-  'assets/playcaptcha.svg',
-]
+export const EXPECTED_PACKAGE_ASSETS = PACKAGED_MAHJONG_VALUES.map(
+  (value) => `assets/majiang_ui/${value}.webp`,
+)
 
-export const EXPECTED_RESOURCES = [
-  ...STANDARD_MAHJONG_VALUES.map((value) => ({
-    stem: String(value),
-    extension: 'webp',
-    directory: 'majiang_ui',
-  })),
-  { stem: 'playcaptcha', extension: 'svg', directory: '' },
-]
+export const EXPECTED_RESOURCES = STANDARD_MAHJONG_VALUES.map((value) => ({
+  stem: String(value),
+  extension: 'webp',
+  directory: 'majiang_ui',
+}))
 
 const textExtensions = new Set(['.html', '.js', '.css', '.map', '.json', '.svg'])
 
@@ -270,7 +278,7 @@ export function assertPackageSource({
     !isWithin(canonicalFixture, canonicalInstalled, pathApi) ||
     pathApi.resolve(canonicalInstalled) === pathApi.resolve(canonicalProject)
   ) {
-    throw new Error('playcaptcha resolved outside its fixture')
+    throw new Error(`${packedManifest.name} resolved outside its fixture`)
   }
   if (
     installedManifest.name !== packedManifest.name ||
@@ -313,7 +321,7 @@ export function assertPortableReport(report, allowedAbsolutePaths = new Set()) {
 
 export function verifyInstalledPackageSource(fixture, project, packedManifest) {
   const fixtureRealpath = realpathSync(fixture)
-  const installedRealpath = realpathSync(join(fixture, 'node_modules', 'playcaptcha'))
+  const installedRealpath = realpathSync(packageInstallPath(fixture, packedManifest.name))
   const installedManifest = JSON.parse(
     readFileSync(join(installedRealpath, 'package.json'), 'utf8'),
   )

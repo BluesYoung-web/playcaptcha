@@ -6,7 +6,7 @@ import {
   compactMahjongChallenge,
   createMahjongChallenge,
   winningTilesForCompactHand,
-} from 'playcaptcha'
+} from '@bluesyoung/playcaptcha'
 import sharp from 'sharp'
 
 import { createChallenge, randomizedTile, variantPool, warmVariantPool } from './server.mjs'

@@ -16,6 +16,7 @@ import {
   auditOutputText,
   assertPortableReport,
   EXPECTED_PACKAGE_ASSETS,
+  packageInstallPath,
   verifyInstalledPackageSource,
   verifyNativeHtml,
   verifyResourceFiles,
@@ -111,14 +112,14 @@ try {
   )
   writeFileSync(
     join(temporary, 'src/main.js'),
-    "import 'playcaptcha'; document.querySelector('#app').innerHTML = '<play-captcha target=\"duck\"></play-captcha>'",
+    `import ${JSON.stringify(packedManifest.name)}; document.querySelector('#app').innerHTML = '<play-captcha></play-captcha>'`,
   )
   run(
     'npm',
     ['install', '--ignore-scripts', '--dry-run=false', '--no-audit', '--no-fund', tarball],
     temporary,
   )
-  const packageRoot = join(temporary, 'node_modules', 'playcaptcha')
+  const packageRoot = packageInstallPath(temporary, packedManifest.name)
   const packageSource = verifyInstalledPackageSource(temporary, project, packedManifest)
   const umdPath = join(packageRoot, 'dist', 'playcaptcha.umd.js')
   const expectedAssets = EXPECTED_PACKAGE_ASSETS
@@ -131,7 +132,7 @@ try {
   }
   writeFileSync(
     join(temporary, 'native.html'),
-    '<script src="./node_modules/playcaptcha/dist/playcaptcha.umd.js"></script>' +
+    `<script src="./${packageRoot.slice(temporary.length + 1).replaceAll('\\', '/')}/dist/playcaptcha.umd.js"></script>` +
       '<play-captcha></play-captcha><output id="result"></output>' +
       '<script>document.querySelector("play-captcha").addEventListener("verify",()=>{document.querySelector("#result").textContent="verified"})</script>',
   )

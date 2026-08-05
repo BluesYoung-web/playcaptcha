@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import 'playcaptcha'
+import '@bluesyoung/playcaptcha'
 import '../../shared/demo.css'
 
 import App from './App.vue'

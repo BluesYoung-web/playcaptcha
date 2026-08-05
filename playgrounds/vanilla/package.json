@@ -9,7 +9,7 @@
     "build": "vp build"
   },
   "dependencies": {
-    "playcaptcha": "workspace:*"
+    "@bluesyoung/playcaptcha": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

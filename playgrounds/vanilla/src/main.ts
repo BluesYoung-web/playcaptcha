@@ -1,5 +1,5 @@
-import { type PlayCaptcha, type PlayCaptchaVerifyEventDetail } from 'playcaptcha'
-import 'playcaptcha'
+import { type PlayCaptcha, type PlayCaptchaVerifyEventDetail } from '@bluesyoung/playcaptcha'
+import '@bluesyoung/playcaptcha'
 import '../../shared/demo.css'
 
 function requireElement<T extends Element>(selector: string): T {

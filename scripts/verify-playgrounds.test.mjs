@@ -107,20 +107,20 @@ void test('scans every emitted text type and rejects a generic home path', async
   }
 })
 
-void test('rejects unresolved playcaptcha imports without rejecting stable bundle strings', (t) => {
+void test('rejects unresolved scoped package imports without rejecting stable bundle strings', (t) => {
   const leaked = syntheticDist(t, {
     'index.html': '<main></main>',
-    'assets/app.js': 'import { PlayCaptcha } from "playcaptcha"',
+    'assets/app.js': 'import { PlayCaptcha } from "@bluesyoung/playcaptcha"',
   })
   assert.throws(
     () => verifyOutputText('react', leaked),
-    /react output contains bare playcaptcha import: assets\/app\.js/i,
+    /react output contains bare @bluesyoung\/playcaptcha import: assets\/app\.js/i,
   )
 
   const clean = syntheticDist(t, {
     'index.html': '<play-captcha></play-captcha>',
     'assets/app.js':
-      'const packageName="playcaptcha";customElements.define("play-captcha",class{})',
+      'const packageName="@bluesyoung/playcaptcha";customElements.define("play-captcha",class{})',
     'assets/app.css': 'play-captcha { display: block }',
     'assets/app.js.map': '{"version":3,"sources":["src/main.ts"],"mappings":""}',
     'metadata.json': '{"component":"play-captcha"}',
@@ -129,32 +129,33 @@ void test('rejects unresolved playcaptcha imports without rejecting stable bundl
   assert.doesNotThrow(() => verifyOutputText('react', clean))
 })
 
-void test('requires side-effect and public API imports independently', () => {
+void test('requires scoped side-effect and public API imports independently', () => {
+  const packageName = '@bluesyoung/playcaptcha'
   assert.throws(
-    () => auditFixtureSourceText('vanilla', "import 'playcaptcha'\nconst tag = 'play-captcha'"),
-    /does not import a playcaptcha public API/i,
+    () => auditFixtureSourceText('vanilla', `import '${packageName}'\nconst tag = 'play-captcha'`),
+    /does not import a @bluesyoung\/playcaptcha public API/i,
   )
   assert.throws(
     () =>
       auditFixtureSourceText(
         'vanilla',
-        "import { PlayCaptcha } from 'playcaptcha'\nconst tag = 'play-captcha'",
+        `import { PlayCaptcha } from '${packageName}'\nconst tag = 'play-captcha'`,
       ),
-    /does not side-effect import playcaptcha/i,
+    /does not side-effect import @bluesyoung\/playcaptcha/i,
   )
   assert.throws(
     () =>
       auditFixtureSourceText(
         'vanilla',
-        "// import 'playcaptcha'\nconst fake = \"import { PlayCaptcha } from 'playcaptcha'\"\nconst tag = 'play-captcha'",
+        `// import '${packageName}'\nconst fake = "import { PlayCaptcha } from '${packageName}'"\nconst tag = 'play-captcha'`,
       ),
-    /does not import a playcaptcha public API/i,
+    /does not import a @bluesyoung\/playcaptcha public API/i,
   )
 
   assert.doesNotThrow(() =>
     auditFixtureSourceText(
       'vue',
-      "import 'playcaptcha'\nimport { PlayCaptcha } from 'playcaptcha'",
+      `import '${packageName}'\nimport { PlayCaptcha } from '${packageName}'`,
     ),
   )
 })
@@ -180,7 +181,7 @@ void test('rejects low-cost synthetic output leaks independently', async (t) => 
       /project absolute path/i,
     ],
     ['const source = "playgrounds/react/src/main.tsx"', /playground source path/i],
-    ["import('playcaptcha')", /bare playcaptcha import/i],
+    ["import('@bluesyoung/playcaptcha')", /bare @bluesyoung\/playcaptcha import/i],
   ]) {
     await t.test(expected.source, (t) => {
       const dist = syntheticDist(t, {
@@ -260,7 +261,7 @@ void test('rejects arbitrary POSIX filesystem roots without rejecting web routes
   assert.doesNotThrow(() => verifyOutputText('vanilla', routes))
 })
 
-void test('requires all 35 runtime resources exactly once and referenced by final output', (t) => {
+void test('requires all 34 runtime resources exactly once and referenced by final output', (t) => {
   const files = Object.fromEntries(
     EXPECTED_RESOURCES.map(({ stem, extension, directory }) => [
       `assets/${directory ? `${directory}/` : ''}${stem}-hash.${extension}`,
@@ -272,10 +273,10 @@ void test('requires all 35 runtime resources exactly once and referenced by fina
       `new URL("/assets/${directory ? `${directory}/` : ''}${stem}-hash.${extension}", import.meta.url)`,
   ).join('\n')
   const complete = syntheticDist(t, files)
-  assert.equal(verifyResourceFiles('vanilla', complete).resourceFiles.length, 35)
+  assert.equal(verifyResourceFiles('vanilla', complete).resourceFiles.length, 34)
 
   const extra = syntheticDist(t, { ...files, 'assets/extra-hash.png': 'binary' })
-  assert.throws(() => verifyResourceFiles('vanilla', extra), /emitted 36 media files/i)
+  assert.throws(() => verifyResourceFiles('vanilla', extra), /emitted 35 media files/i)
 
   const commentsOnly = syntheticDist(t, {
     ...files,
@@ -283,7 +284,7 @@ void test('requires all 35 runtime resources exactly once and referenced by fina
       ({ stem, extension }) => `// /assets/${stem}-hash.${extension}`,
     ).join('\n'),
   })
-  assert.throws(() => verifyResourceFiles('vanilla', commentsOnly), /does not reference resource/i)
+  assert.throws(() => verifyResourceFiles('vanilla', commentsOnly), /deduplicated WebP/i)
 
   const sourceMapOnly = syntheticDist(t, {
     ...files,
@@ -296,7 +297,7 @@ void test('requires all 35 runtime resources exactly once and referenced by fina
       mappings: '',
     }),
   })
-  assert.throws(() => verifyResourceFiles('vanilla', sourceMapOnly), /does not reference resource/i)
+  assert.throws(() => verifyResourceFiles('vanilla', sourceMapOnly), /deduplicated WebP/i)
 
   const markupCommentsOnly = syntheticDist(t, {
     ...files,
@@ -305,10 +306,7 @@ void test('requires all 35 runtime resources exactly once and referenced by fina
     ).join('\n'),
     'assets/app.js': 'const value = 1',
   })
-  assert.throws(
-    () => verifyResourceFiles('vanilla', markupCommentsOnly),
-    /does not reference resource/i,
-  )
+  assert.throws(() => verifyResourceFiles('vanilla', markupCommentsOnly), /deduplicated WebP/i)
 
   const cssCommentsOnly = syntheticDist(t, {
     ...files,
@@ -317,10 +315,7 @@ void test('requires all 35 runtime resources exactly once and referenced by fina
     ).join('\n'),
     'assets/app.js': 'const value = 1',
   })
-  assert.throws(
-    () => verifyResourceFiles('vanilla', cssCommentsOnly),
-    /does not reference resource/i,
-  )
+  assert.throws(() => verifyResourceFiles('vanilla', cssCommentsOnly), /deduplicated WebP/i)
 
   const nestedFiles = Object.fromEntries(
     EXPECTED_RESOURCES.map(({ stem, extension }) => [
@@ -333,7 +328,7 @@ void test('requires all 35 runtime resources exactly once and referenced by fina
       `new URL("../../media\\\\deep\\\\${stem}-hash.${extension}", import.meta.url)`,
   ).join('\n')
   const nested = syntheticDist(t, nestedFiles)
-  assert.equal(verifyResourceFiles('vanilla', nested).resourceFiles.length, 35)
+  assert.equal(verifyResourceFiles('vanilla', nested).resourceFiles.length, 34)
 
   const brokenReference = syntheticDist(t, {
     ...files,
@@ -342,18 +337,6 @@ void test('requires all 35 runtime resources exactly once and referenced by fina
   assert.throws(
     () => verifyResourceFiles('vanilla', brokenReference),
     /references missing output file: assets\/ghost-hash\.png/i,
-  )
-
-  const missingFiles = { ...files }
-  delete missingFiles['assets/playcaptcha-hash.svg']
-  missingFiles['assets/app.js'] = missingFiles['assets/app.js'].replace(
-    'new URL("/assets/playcaptcha-hash.svg", import.meta.url)\n',
-    '',
-  )
-  const missing = syntheticDist(t, missingFiles)
-  assert.throws(
-    () => verifyResourceFiles('vanilla', missing),
-    /missing output file: assets\/playcaptcha-hash\.svg/i,
   )
 })
 
@@ -379,7 +362,7 @@ void test('does not treat media strings resolved against an external URL as dist
   ).join('\n')
 
   const dist = syntheticDist(t, files)
-  assert.throws(() => verifyResourceFiles('vanilla', dist), /does not reference resource/i)
+  assert.throws(() => verifyResourceFiles('vanilla', dist), /deduplicated WebP/i)
 })
 
 void test('executes the final bundle and rejects tag strings without registration', async (t) => {
@@ -521,7 +504,7 @@ void test('verifies all packed playgrounds and cleans the default fixture root',
           javascript: true,
           componentRegistration: true,
           componentRendered: true,
-          resources: 35,
+          resources: 34,
           auditedTextFiles: true,
           portable: true,
           packageSource: true,

@@ -31,7 +31,7 @@ importers:
 
   playgrounds/react:
     dependencies:
-      playcaptcha:
+      '@bluesyoung/playcaptcha':
         specifier: workspace:*
         version: link:../..
       react:
@@ -59,7 +59,7 @@ importers:
 
   playgrounds/server:
     dependencies:
-      playcaptcha:
+      '@bluesyoung/playcaptcha':
         specifier: workspace:*
         version: link:../..
       sharp:
@@ -78,7 +78,7 @@ importers:
 
   playgrounds/vanilla:
     dependencies:
-      playcaptcha:
+      '@bluesyoung/playcaptcha':
         specifier: workspace:*
         version: link:../..
     devDependencies:
@@ -91,7 +91,7 @@ importers:
 
   playgrounds/vue:
     dependencies:
-      playcaptcha:
+      '@bluesyoung/playcaptcha':
         specifier: workspace:*
         version: link:../..
       vue:
@@ -1950,19 +1950,19 @@ snapshots:
       vite: 8.1.5(@types/node@26.1.1)
       vue: 3.5.40(typescript@5.9.3)
 
-  '@vitest/browser-preview@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10)':
+  '@vitest/browser-preview@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)))':
     dependencies:
       '@testing-library/dom': 10.4.1
       '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.1)
-      '@vitest/browser': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10)
-      vitest: 4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1))
+      '@vitest/browser': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)))
+      vitest: 4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10))(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1))
     transitivePeerDependencies:
       - bufferutil
       - msw
       - utf-8-validate
       - vite
 
-  '@vitest/browser@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10)':
+  '@vitest/browser@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)))':
     dependencies:
       '@blazediff/core': 1.9.1
       '@vitest/mocker': 4.1.10(vite@8.1.5(@types/node@26.1.1))
@@ -1971,7 +1971,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1))
+      vitest: 4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10))(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1))
       ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
@@ -2501,8 +2501,8 @@ snapshots:
     dependencies:
       '@oxc-project/types': 0.141.0
       '@oxlint/plugins': 1.73.0
-      '@vitest/browser': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10)
-      '@vitest/browser-preview': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10)
+      '@vitest/browser': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)))
+      '@vitest/browser-preview': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)))
       '@vitest/expect': 4.1.10
       '@vitest/mocker': 4.1.10(vite@8.1.5(@types/node@26.1.1))
       '@vitest/pretty-format': 4.1.10
@@ -2514,7 +2514,7 @@ snapshots:
       oxfmt: 0.60.0(vite-plus@0.2.6(@types/node@26.1.1)(happy-dom@20.11.1)(typescript@5.9.3)(vite@8.1.5(@types/node@26.1.1)))
       oxlint: 1.75.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.2.6(@types/node@26.1.1)(happy-dom@20.11.1)(typescript@5.9.3)(vite@8.1.5(@types/node@26.1.1)))
       oxlint-tsgolint: 7.0.2001
-      vitest: 4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1))
+      vitest: 4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10))(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1))
     optionalDependencies:
       '@voidzero-dev/vite-plus-darwin-arm64': 0.2.6
       '@voidzero-dev/vite-plus-darwin-x64': 0.2.6
@@ -2566,7 +2566,7 @@ snapshots:
       '@types/node': 26.1.1
       fsevents: 2.3.3
 
-  vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)):
+  vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10))(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)):
     dependencies:
       '@vitest/expect': 4.1.10
       '@vitest/mocker': 4.1.10(vite@8.1.5(@types/node@26.1.1))
@@ -2590,7 +2590,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 26.1.1
-      '@vitest/browser-preview': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10)
+      '@vitest/browser-preview': 4.1.10(vite@8.1.5(@types/node@26.1.1))(vitest@4.1.10(@types/node@26.1.1)(@vitest/browser-preview@4.1.10)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.1)))
       happy-dom: 20.11.1
     transitivePeerDependencies:
       - msw

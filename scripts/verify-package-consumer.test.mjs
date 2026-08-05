@@ -110,7 +110,7 @@ void test('verifies the packed UMD with a native HTML fixture', () => {
     ])
 
     assert.equal(report.umd, true)
-    assert.equal(report.resources, 35)
+    assert.equal(report.resources, 34)
     assert.equal(report.nativeHtml, true)
     assert.equal(report.packageSource, true)
     assert.equal(report.installedVersion, packageVersion)
@@ -128,8 +128,8 @@ void test('rejects wrong installed identity and an installed realpath outside th
     fixture: '/tmp/owned-consumer',
     installedRealpath: '/tmp/owned-consumer/node_modules/playcaptcha',
     projectRealpath: '/workspace/playcaptcha',
-    packedManifest: { name: 'playcaptcha', version: packageVersion },
-    installedManifest: { name: 'playcaptcha', version: packageVersion },
+    packedManifest: { name: '@bluesyoung/playcaptcha', version: packageVersion },
+    installedManifest: { name: '@bluesyoung/playcaptcha', version: packageVersion },
   }
   assert.doesNotThrow(() => assertPackageSource(valid))
   assert.throws(
@@ -144,9 +144,9 @@ void test('rejects wrong installed identity and an installed realpath outside th
     () =>
       assertPackageSource({
         ...valid,
-        installedManifest: { name: 'playcaptcha', version: '9.9.9' },
+        installedManifest: { name: '@bluesyoung/playcaptcha', version: '9.9.9' },
       }),
-    /unexpected package playcaptcha@9\.9\.9/i,
+    /unexpected package @bluesyoung\/playcaptcha@9\.9\.9/i,
   )
   assert.throws(
     () => assertPackageSource({ ...valid, installedRealpath: '/workspace/playcaptcha' }),
@@ -168,8 +168,8 @@ void test('canonicalizes package parents and children through an injectable real
       fixture: '/var/folders/fixture',
       installedRealpath: '/var/folders/fixture/node_modules/playcaptcha',
       projectRealpath: '/workspace/playcaptcha',
-      packedManifest: { name: 'playcaptcha', version: packageVersion },
-      installedManifest: { name: 'playcaptcha', version: packageVersion },
+      packedManifest: { name: '@bluesyoung/playcaptcha', version: packageVersion },
+      installedManifest: { name: '@bluesyoung/playcaptcha', version: packageVersion },
       realpathResolver: (path) => aliases.get(path) ?? path,
     }),
   )
@@ -180,8 +180,8 @@ void test('uses Windows path semantics for installed-package containment', () =>
     fixture: String.raw`C:\fixtures\consumer`,
     installedRealpath: String.raw`C:\fixtures\consumer\node_modules\playcaptcha`,
     projectRealpath: String.raw`D:\source\playcaptcha`,
-    packedManifest: { name: 'playcaptcha', version: packageVersion },
-    installedManifest: { name: 'playcaptcha', version: packageVersion },
+    packedManifest: { name: '@bluesyoung/playcaptcha', version: packageVersion },
+    installedManifest: { name: '@bluesyoung/playcaptcha', version: packageVersion },
     realpathResolver: (path) => path,
     pathApi: win32,
   }
@@ -321,7 +321,7 @@ void test('emits pure JSON while reusing the suite release build', () => {
     const report = JSON.parse(result.stdout)
     assert.equal(JSON.stringify(report).includes(sandbox.root), false)
     assert.equal(report.umd, true)
-    assert.equal(report.resources, 35)
+    assert.equal(report.resources, 34)
     assert.equal(report.nativeHtml, true)
     assert.equal(report.componentRendered, true)
     assert.equal(report.scriptRelativeAssets, true)

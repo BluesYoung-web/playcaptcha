@@ -1,7 +1,5 @@
 import type { MahjongTileId } from './mahjong.ts'
 
-export const DEFAULT_LOGO_URL = new URL('../assets/playcaptcha.svg', import.meta.url).href
-
 export const DEFAULT_MAHJONG_URLS: Record<MahjongTileId, string> = {
   'wan-1': new URL('../assets/majiang_ui/21.webp', import.meta.url).href,
   'wan-2': new URL('../assets/majiang_ui/22.webp', import.meta.url).href,
